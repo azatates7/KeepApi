@@ -1,0 +1,23 @@
+<Solution>
+  <Project Path="../../frontend/" Type="Website" DisplayName="frontend">
+    <BuildType Project="Debug" />
+    <Properties Name="WebsiteProperties">
+      <Property Name="Debug.AspNetCompiler.Debug" Value="&quot;True&quot;" />
+      <Property Name="Debug.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+      <Property Name="Debug.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+      <Property Name="Debug.AspNetCompiler.PhysicalPath" Value="&quot;..\..\frontend\&quot;" />
+      <Property Name="Debug.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62672\&quot;" />
+      <Property Name="Debug.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+      <Property Name="Debug.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62672&quot;" />
+      <Property Name="Release.AspNetCompiler.Debug" Value="&quot;False&quot;" />
+      <Property Name="Release.AspNetCompiler.FixedNames" Value="&quot;false&quot;" />
+      <Property Name="Release.AspNetCompiler.ForceOverwrite" Value="&quot;true&quot;" />
+      <Property Name="Release.AspNetCompiler.PhysicalPath" Value="&quot;..\..\frontend\&quot;" />
+      <Property Name="Release.AspNetCompiler.TargetPath" Value="&quot;PrecompiledWeb\localhost_62672\&quot;" />
+      <Property Name="Release.AspNetCompiler.Updateable" Value="&quot;true&quot;" />
+      <Property Name="Release.AspNetCompiler.VirtualPath" Value="&quot;/localhost_62672&quot;" />
+      <Property Name="VWDPort" Value="&quot;62672&quot;" />
+    </Properties>
+  </Project>
+  <Project Path="KeepApi.csproj" />
+</Solution>
