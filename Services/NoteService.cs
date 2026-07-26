@@ -1,5 +1,6 @@
-using System.Text.Json;
 using KeepApi.Models;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace KeepApi.Services;
 
@@ -20,13 +21,16 @@ public class NoteService
     };
 
     private readonly ILogger<NoteService> _logger;
+    private readonly IDatabase _redis;
+    private const string NotesCacheKey = "notes:all";
 
     public NoteService(
         IWebHostEnvironment env,
-        ILogger<NoteService> logger)
+        ILogger<NoteService> logger,
+        IConnectionMultiplexer redis)
     {
         _logger = logger;
-
+        _redis = redis.GetDatabase();
         var dataDir = Path.Combine(env.ContentRootPath, "Data");
 
         Directory.CreateDirectory(dataDir);
@@ -56,7 +60,7 @@ public class NoteService
         }
     }
 
-    public async Task<List<Note>> GetAll()
+    public async Task<List<Note>> GetAllsync()
     {
         await _lock.WaitAsync();
         try
@@ -150,7 +154,7 @@ public class NoteService
 
     public async Task<Note?> GetByIdAsync(string id)
     {
-        var notes = await GetAllAsync();
+        var notes = await GetAllsync();
         return notes.FirstOrDefault(n => n.Id == id);
     }
 
@@ -237,7 +241,7 @@ public class NoteService
     {
         await using var stream = File.OpenRead(_filePath);
         var notes = await JsonSerializer.DeserializeAsync<List<Note>>(stream, _jsonOptions);
-        return notes ?? new List<Note>();
+        return notes ?? [];
     }
 
     private async Task WriteFileAsync(List<Note> notes)

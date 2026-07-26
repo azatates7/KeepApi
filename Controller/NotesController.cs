@@ -31,11 +31,11 @@ namespace KeepApi.Controllers
         
         /// <summary>Tüm notları listeler (aktif + arşivlenmiş + silinmiş).</summary>
         /// <response code="200">Not listesi döner.</response>
-        [HttpGet]
+        [HttpGet("getall")]
         [ProducesResponseType(typeof(List<Note>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<Note>>> GetAll()
         {
-            return Ok(await _noteService.GetAllAsync());
+            return Ok(await _noteService.GetAllsync());
         }
 
         /// <summary>Tek bir notu id'sine göre getirir.</summary>

@@ -1,8 +1,9 @@
-using System.Reflection;
-using KeepApi.Services;
 using KeepApi.Middleware;
-using Microsoft.OpenApi.Models;
+using KeepApi.Services;
+using Microsoft.OpenApi;
 using Serilog;
+using StackExchange.Redis;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,11 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
+});
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    return ConnectionMultiplexer.Connect("localhost:6379");
 });
 
 var app = builder.Build();
