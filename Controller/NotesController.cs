@@ -24,18 +24,18 @@ namespace KeepApi.Controllers
         /// <response code="200">Not listesi döner.</response>
         [HttpGet]
         [ProducesResponseType(typeof(List<Note>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<List<Note>>> Get()
+        public async Task<ActionResult<List<Note>>> Get(CancellationToken cancellationToken = default)
         {
-            return Ok(await _noteService.GetAsync());
+            return Ok(await _noteService.GetAsync(cancellationToken));
         }
         
         /// <summary>Tüm notları listeler (aktif + arşivlenmiş + silinmiş).</summary>
         /// <response code="200">Not listesi döner.</response>
         [HttpGet("getall")]
         [ProducesResponseType(typeof(List<Note>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<List<Note>>> GetAll()
+        public async Task<ActionResult<List<Note>>> GetAll(CancellationToken cancellationToken = default)
         {
-            return Ok(await _noteService.GetAllsync());
+            return Ok(await _noteService.GetAllAsync(cancellationToken));
         }
 
         /// <summary>Tek bir notu id'sine göre getirir.</summary>
@@ -45,9 +45,9 @@ namespace KeepApi.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Note), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Note>> GetById(string id)
+        public async Task<ActionResult<Note>> GetById(string id, CancellationToken cancellationToken = default)
         {
-            var note = await _noteService.GetByIdAsync(id);
+            var note = await _noteService.GetByIdAsync(id, cancellationToken);
             return note is null ? NotFound() : Ok(note);
         }
 
@@ -56,9 +56,9 @@ namespace KeepApi.Controllers
         /// <response code="201">Not oluşturuldu, Location header'ı yeni kaydın adresini gösterir.</response>
         [HttpPost]
         [ProducesResponseType(typeof(Note), StatusCodes.Status201Created)]
-        public async Task<ActionResult<Note>> Create([FromBody] Note note)
+        public async Task<ActionResult<Note>> Create([FromBody] Note note, CancellationToken cancellationToken = default)
         {
-            var created = await _noteService.CreateAsync(note);
+            var created = await _noteService.CreateAsync(note, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -70,9 +70,9 @@ namespace KeepApi.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(Note), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Note>> Update(string id, [FromBody] Note note)
+        public async Task<ActionResult<Note>> Update(string id, [FromBody] Note note, CancellationToken cancellationToken = default)
         {
-            var updated = await _noteService.UpdateAsync(id, note);
+            var updated = await _noteService.UpdateAsync(id, note, cancellationToken);
             return updated is null ? NotFound() : Ok(updated);
         }
 
@@ -83,30 +83,30 @@ namespace KeepApi.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken = default)
         {
-            var deleted = await _noteService.DeleteAsync(id);
+            var deleted = await _noteService.DeleteAsync(id, cancellationToken);
             return deleted ? NoContent() : NotFound();
         }  
         
         [HttpGet("trash")]
-        public async Task<ActionResult<List<Note>>> GetTrash()
+        public async Task<ActionResult<List<Note>>> GetTrash(CancellationToken cancellationToken = default)
         {
-            return Ok(await _noteService.GetDeletedAsync());
+            return Ok(await _noteService.GetDeletedAsync(cancellationToken));
         }
 
         [HttpPut("{id}/restore")]
-        public async Task<IActionResult> Restore(string id)
+        public async Task<IActionResult> Restore(string id, CancellationToken cancellationToken = default)
         {
-            var result = await _noteService.RestoreAsync(id);
+            var result = await _noteService.RestoreAsync(id, cancellationToken);
 
             return result ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id}/permanent")]
-        public async Task<IActionResult> DeleteForever(string id)
+        public async Task<IActionResult> DeleteForever(string id, CancellationToken cancellationToken = default)
         {
-            var result = await _noteService.DeleteForeverAsync(id);
+            var result = await _noteService.DeleteForeverAsync(id, cancellationToken);
 
             return result ? NoContent() : NotFound();
         }

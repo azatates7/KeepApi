@@ -6,13 +6,16 @@ namespace KeepApi.Services;
 
 /// <summary>
 /// Persists notes to a JSON file on disk instead of a database.
-/// All reads/writes go through a semaphore so concurrent requests
-/// don't corrupt the file (classic JSON-as-DB race condition).
+/// Redis is used as a cache layer.
+/// JSON file remains the source of truth.
 /// </summary>
 public class NoteService
 {
     private readonly string _filePath;
-    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly SemaphoreSlim _fileLock = new(1, 1);
+
+    private static readonly TimeSpan CacheExpiration =
+        TimeSpan.FromMinutes(30);
 
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -22,15 +25,14 @@ public class NoteService
 
     private readonly ILogger<NoteService> _logger;
     private readonly IDatabase _redis;
+
     private const string NotesCacheKey = "notes:all";
 
-    public NoteService(
-        IWebHostEnvironment env,
-        ILogger<NoteService> logger,
-        IConnectionMultiplexer redis)
+    public NoteService(IWebHostEnvironment env, ILogger<NoteService> logger, IConnectionMultiplexer redis)
     {
         _logger = logger;
         _redis = redis.GetDatabase();
+
         var dataDir = Path.Combine(env.ContentRootPath, "Data");
 
         Directory.CreateDirectory(dataDir);
@@ -43,127 +45,48 @@ public class NoteService
         }
     }
 
-    public async Task<List<Note>> GetAsync()
+    public async Task<List<Note>> GetAsync(CancellationToken cancellationToken)
     {
-        await _lock.WaitAsync();
-        try
-        {
-            var results = await ReadFileAsync();
-            return results
-                   .Where(x => !x.IsDeleted && x.Status == 1)
-                   .ToList();
-        }
-        finally
-        {
-            _logger.LogInformation("Notes have been read.");
-            _lock.Release();
-        }
+        var results = await GetNotesWithRedisControl(cancellationToken);
+
+        _logger.LogInformation("Notes have been read.");
+
+        return results.Where(x => !x.IsDeleted && x.Status == 1).ToList();
     }
 
-    public async Task<List<Note>> GetAllsync()
+    public async Task<List<Note>> GetAllAsync(CancellationToken cancellationToken)
     {
-        await _lock.WaitAsync();
-        try
-        {
-            var results = await ReadFileAsync();
-            return results
-                .ToList();
-        }
-        finally
-        {
-            _logger.LogInformation("All notes have been read.");
-            _lock.Release();
-        }
-    }
-    
-    /// <summary>Çöp kutusundaki (IsDeleted == true) notları döner.</summary>
-    public async Task<List<Note>> GetDeletedAsync()
-    {
-        await _lock.WaitAsync();
-        try
-        {
-            var results = await ReadFileAsync();
-            Console.WriteLine($"Toplam kayıt : {results.Count}");
+        var results = await GetNotesWithRedisControl(cancellationToken);
 
-            Console.WriteLine($"Silinen : {results.Count(x => x.IsDeleted)}");
+        _logger.LogInformation("All notes have been read.");
 
-            return results
-                   .Where(x => x.IsDeleted && x.Status == 1)
-                   .ToList();
-        }
-        finally
-        {
-            _logger.LogInformation("Trash notes have been read.");
-            _lock.Release();
-        }
+        return results;
     }
-    
-    public async Task<bool> RestoreAsync(string id)
+
+    public async Task<List<Note>> GetDeletedAsync(CancellationToken cancellationToken)
     {
-        await _lock.WaitAsync();
+        var results = await GetNotesWithRedisControl(cancellationToken);
+
+        _logger.LogInformation("Trash notes loaded. Total: {TotalCount}, Deleted: {DeletedCount}", results.Count, results.Count(x => x.IsDeleted));
+
+        return results
+            .Where(x => x.IsDeleted && x.Status == 1)
+            .ToList();
+    }
+
+    public async Task<Note?> GetByIdAsync(string id, CancellationToken cancellationToken)
+    {
+        var notes = await GetNotesWithRedisControl(cancellationToken);
+        return notes.FirstOrDefault(x => x.Id == id);
+    }
+
+    public async Task<Note> CreateAsync(Note note, CancellationToken cancellationToken)
+    {
+        await _fileLock.WaitAsync(cancellationToken);
 
         try
         {
-            var notes = await ReadFileAsync();
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
-
-            if (existing == null)
-                return false;
-
-            existing.IsDeleted = false;
-            existing.Status = 1;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            await WriteFileAsync(notes);
-
-            return true;
-        }
-        finally
-        {
-            _lock.Release();
-        }
-    }
-    
-    public async Task<bool> DeleteForeverAsync(string id)
-    {
-        await _lock.WaitAsync();
-
-        try
-        {
-            var notes = await ReadFileAsync();
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
-
-            if (existing == null)
-                return false;
-
-            existing.Status = 0;
-            existing.IsDeleted = true;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            await WriteFileAsync(notes);
-
-            return true;
-        }
-        finally
-        {
-            _lock.Release();
-        }
-    }
-
-    public async Task<Note?> GetByIdAsync(string id)
-    {
-        var notes = await GetAllsync();
-        return notes.FirstOrDefault(n => n.Id == id);
-    }
-
-    public async Task<Note> CreateAsync(Note note)
-    {
-        await _lock.WaitAsync();
-        try
-        {
-            var notes = await ReadFileAsync();
+            var notes = await ReadFileAsync(cancellationToken);
 
             note.Id = Guid.NewGuid().ToString("N");
             note.CreatedAt = DateTime.UtcNow;
@@ -172,85 +95,246 @@ public class NoteService
             note.Status = 1;
 
             notes.Insert(0, note);
-            await WriteFileAsync(notes);
-            _logger.LogInformation("A Note has been created.");
+
+            await WriteFileAsync(notes, cancellationToken);
+
+            _logger.LogInformation("Note created. Id: {Id}", note.Id);
+
             return note;
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            _logger.LogError(exception, "An error occurred while creating a Note.");
+            _logger.LogError(ex, "Error while creating note.");
             throw;
         }
         finally
         {
-            _lock.Release();
+            _fileLock.Release();
         }
     }
 
-    public async Task<Note?> UpdateAsync(string id, Note updated)
+    public async Task<Note?> UpdateAsync(string id, Note updated, CancellationToken cancellationToken)
     {
-        await _lock.WaitAsync();
+        await _fileLock.WaitAsync(cancellationToken);
+
         try
         {
-            var notes = await ReadFileAsync();
-            var existing = notes.FirstOrDefault(n => n.Id == id);
-            if (existing is null) return null;
+            var notes = await ReadFileAsync(cancellationToken);
+
+            var existing = notes.FirstOrDefault(x => x.Id == id);
+            if (existing is null)
+                return null;
 
             existing.Title = updated.Title;
             existing.Content = updated.Content;
             existing.Color = updated.Color;
             existing.Pinned = updated.Pinned;
             existing.Archived = updated.Archived;
-            existing.UpdatedAt = DateTime.UtcNow;
             existing.ReminderAt = updated.ReminderAt;
             existing.IsDeleted = updated.IsDeleted;
             existing.Status = updated.Status;
-            
-            await WriteFileAsync(notes);
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await WriteFileAsync(notes, cancellationToken);
+
+            _logger.LogInformation("Note updated. Id: {Id}", id);
+
             return existing;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while updating note.");
+            throw;
         }
         finally
         {
-            _lock.Release();
+            _fileLock.Release();
         }
     }
 
-    public async Task<bool> DeleteAsync(string id)
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken)
     {
-        await _lock.WaitAsync();
+        await _fileLock.WaitAsync(cancellationToken);
+
         try
         {
-            var notes = await ReadFileAsync();
-            var existing = notes.FirstOrDefault(n => n.Id == id);
-            if (existing is null) return false;
+            var notes = await ReadFileAsync(cancellationToken);
+
+            var existing = notes.FirstOrDefault(x => x.Id == id);
+            if (existing is null)
+                return false;
 
             existing.IsDeleted = true;
             existing.Status = 1;
             existing.UpdatedAt = DateTime.UtcNow;
-            
-            await WriteFileAsync(notes);
+
+            await WriteFileAsync(notes, cancellationToken);
+
+            _logger.LogInformation("Note moved to trash. Id: {Id}", id);
+
             return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while deleting note.");
+            throw;
         }
         finally
         {
-            _lock.Release();
+            _fileLock.Release();
         }
     }
 
-    private async Task<List<Note>> ReadFileAsync()
+    public async Task<bool> RestoreAsync(string id, CancellationToken cancellationToken)
     {
-        await using var stream = File.OpenRead(_filePath);
-        var notes = await JsonSerializer.DeserializeAsync<List<Note>>(stream, _jsonOptions);
-        return notes ?? [];
-    }
+        await _fileLock.WaitAsync(cancellationToken);
 
-    private async Task WriteFileAsync(List<Note> notes)
-    {
-        var tempPath = _filePath + ".tmp";
-        await using (var stream = File.Create(tempPath))
+        try
         {
-            await JsonSerializer.SerializeAsync(stream, notes, _jsonOptions);
+            var notes = await ReadFileAsync(cancellationToken);
+
+            var existing = notes.FirstOrDefault(x => x.Id == id);
+            if (existing is null)
+                return false;
+
+            existing.IsDeleted = false;
+            existing.Status = 1;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await WriteFileAsync(notes, cancellationToken);
+
+            _logger.LogInformation("Note restored. Id: {Id}", id);
+
+            return true;
         }
-        File.Move(tempPath, _filePath, overwrite: true);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while restoring note.");
+            throw;
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
+
+    public async Task<bool> DeleteForeverAsync(string id, CancellationToken cancellationToken)
+    {
+        await _fileLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            var notes = await ReadFileAsync(cancellationToken);
+
+            var existing = notes.FirstOrDefault(x => x.Id == id);
+
+            if (existing is null)
+                return false;
+
+            existing.Status = 0;
+            existing.IsDeleted = true;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await WriteFileAsync(notes, cancellationToken);
+
+            _logger.LogInformation("Note permanently deleted. Id: {Id}", id);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while permanently deleting note.");
+            throw;
+        }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
+
+    private async Task<List<Note>> ReadFileAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!File.Exists(_filePath))
+                return [];
+
+            await using var stream = File.OpenRead(_filePath);
+
+            return await JsonSerializer.DeserializeAsync<List<Note>>(stream, _jsonOptions, cancellationToken) ?? [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to read notes file.");
+            throw;
+        }
+    }
+
+    private async Task<List<Note>> GetNotesWithRedisControl(CancellationToken cancellationToken)
+    {
+        try
+        {
+            // First attempt: read from Redis without locking.
+            var cachedNotes = await _redis.StringGetAsync(NotesCacheKey);
+
+            if (cachedNotes.HasValue)
+            {
+                return JsonSerializer.Deserialize<List<Note>>((string)cachedNotes!, _jsonOptions) ?? [];
+            }
+
+            // Cache miss -> only one thread should populate Redis.
+            await _fileLock.WaitAsync(cancellationToken);
+
+            try
+            {
+                // Another thread may already have populated Redis.
+                cachedNotes = await _redis.StringGetAsync(NotesCacheKey);
+
+                if (cachedNotes.HasValue)
+                {
+                    return JsonSerializer.Deserialize<List<Note>>((string)cachedNotes!, _jsonOptions) ?? [];
+                }
+
+                var notes = await ReadFileAsync(cancellationToken);
+
+                var serialized = JsonSerializer.Serialize(notes, _jsonOptions);
+
+                await _redis.StringSetAsync(NotesCacheKey, serialized, CacheExpiration);
+
+                _logger.LogInformation("Notes loaded from disk and cached in Redis.");
+
+                return notes;
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load notes from Redis. Falling back to disk.");
+
+            return await ReadFileAsync(cancellationToken);
+        }
+    }
+
+    private async Task WriteFileAsync(List<Note> notes, CancellationToken cancellationToken)
+    {
+        await using (var stream = File.Create(_filePath))
+        {
+            await JsonSerializer.SerializeAsync(stream, notes, _jsonOptions, cancellationToken);
+            await stream.FlushAsync();
+        }
+
+        try
+        {
+            var serializedNotes = JsonSerializer.Serialize(notes, _jsonOptions);
+
+            await _redis.StringSetAsync(NotesCacheKey, serializedNotes, CacheExpiration);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update Redis cache after writing notes.");
+        }
     }
 }

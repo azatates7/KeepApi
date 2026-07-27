@@ -4,6 +4,7 @@ using Microsoft.OpenApi;
 using Serilog;
 using StackExchange.Redis;
 using System.Reflection;
+using KeepApi.Data.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +35,7 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
-builder.Services.AddCors(options =>
+builder.Services.AddCors(options => // React policy allow
 {
     var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:5173";
     options.AddPolicy("AllowFrontend", policy =>
@@ -45,10 +46,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 {
     return ConnectionMultiplexer.Connect("localhost:6379");
 });
+
+builder.Services.AddKeepData(builder.Configuration);
 
 var app = builder.Build();
 
