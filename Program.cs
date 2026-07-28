@@ -1,10 +1,12 @@
+using KeepApi.Data.Context;
+using KeepApi.Data.Extensions;
 using KeepApi.Middleware;
 using KeepApi.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Serilog;
 using StackExchange.Redis;
 using System.Reflection;
-using KeepApi.Data.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +64,24 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Keep Todo API v1");
     });
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<KeepDbContext>();
+
+        await db.Database.OpenConnectionAsync();
+
+        Console.WriteLine("Oracle connection is enabled.");
+
+        await db.Database.CloseConnectionAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+    }
 }
 
 app.UseCors("AllowFrontend");

@@ -86,6 +86,11 @@ public class NoteService
 
         try
         {
+            if (string.IsNullOrWhiteSpace(note?.Title) || string.IsNullOrWhiteSpace(note?.Content))
+            {
+                throw new Exception("Not title veya içerik boş olamaz.");
+            }
+
             var notes = await ReadFileAsync(cancellationToken);
 
             note.Id = Guid.NewGuid().ToString("N");
@@ -134,6 +139,11 @@ public class NoteService
             existing.IsDeleted = updated.IsDeleted;
             existing.Status = updated.Status;
             existing.UpdatedAt = DateTime.UtcNow;
+
+            if (string.IsNullOrWhiteSpace(existing?.Title) || string.IsNullOrWhiteSpace(existing?.Content))
+            {
+                throw new Exception("Not title veya içerik boş olamaz.");
+            }
 
             await WriteFileAsync(notes, cancellationToken);
 
