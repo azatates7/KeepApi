@@ -134,7 +134,9 @@ public class NoteService
             existing.Content = updated.Content;
             existing.Color = updated.Color;
             existing.Pinned = updated.Pinned;
+            existing.PinnedAt = updated.PinnedAt;
             existing.Archived = updated.Archived;
+            existing.ArchievedAt = updated.ArchievedAt;
             existing.ReminderAt = updated.ReminderAt;
             existing.IsDeleted = updated.IsDeleted;
             existing.Status = updated.Status;

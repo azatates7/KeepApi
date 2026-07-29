@@ -54,6 +54,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 });
 
 builder.Services.AddKeepData(builder.Configuration);
+builder.Services.AddDbContext<KeepDbContext>(options =>
+    options.UseOracle(builder.Configuration["ConnectionStrings:Oracle"]));
 
 var app = builder.Build();
 
@@ -68,19 +70,16 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
+    var services = scope.ServiceProvider;
     try
     {
-        var db = scope.ServiceProvider.GetRequiredService<KeepDbContext>();
-
-        await db.Database.OpenConnectionAsync();
-
-        Console.WriteLine("Oracle connection is enabled.");
-
-        await db.Database.CloseConnectionAsync();
+        var context = services.GetRequiredService<KeepDbContext>();
+        await DatabaseSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
-        Console.WriteLine(ex.Message);
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Veritabanı seed işlemi sırasında bir hata oluştu.");
     }
 }
 

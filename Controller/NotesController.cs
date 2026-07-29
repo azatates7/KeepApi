@@ -1,6 +1,7 @@
 using KeepApi.Models;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using Oracle.ManagedDataAccess.Client;
 
 namespace KeepApi.Controllers
 {
@@ -14,10 +15,12 @@ namespace KeepApi.Controllers
     public class NotesController : ControllerBase
     {
         private readonly NoteService _noteService;
+        private readonly IConfiguration _configuration;
 
-        public NotesController(NoteService noteService)
+        public NotesController(NoteService noteService, IConfiguration configuration)
         {
             _noteService = noteService;
+            _configuration = configuration;
         }
 
         /// <summary>Tüm notları listeler (aktif + arşivlenmiş).</summary>
@@ -109,6 +112,25 @@ namespace KeepApi.Controllers
             var result = await _noteService.DeleteForeverAsync(id, cancellationToken);
 
             return result ? NoContent() : NotFound();
+        }
+
+        [HttpPost("oracleconnectiontest")]
+        public async Task<IActionResult> TestOracleConnection(CancellationToken cancellationToken = default)
+        {
+            var conn = new OracleConnection(_configuration["ConnectionStrings:Oracle"]);
+
+            try
+            {
+                conn.Open();
+                Console.WriteLine("Connected!");
+                conn.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return Ok();
         }
     }
 }
