@@ -15,7 +15,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-builder.Services.AddSingleton<NoteService>();
+builder.Services.AddScoped<NoteService>(); 
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -54,8 +54,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 });
 
 builder.Services.AddKeepData(builder.Configuration);
-builder.Services.AddDbContext<KeepDbContext>(options =>
-    options.UseOracle(builder.Configuration["ConnectionStrings:Oracle"]));
+//builder.Services.AddDbContext<KeepDbContext>(options =>
+//    options.UseOracle(builder.Configuration["ConnectionStrings:Oracle"]));
 
 var app = builder.Build();
 
