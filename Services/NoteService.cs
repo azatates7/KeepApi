@@ -1,3 +1,4 @@
+using KeepApi.Data.Context;
 using KeepApi.Models;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -25,13 +26,15 @@ public class NoteService
 
     private readonly ILogger<NoteService> _logger;
     private readonly IDatabase _redis;
+    private readonly KeepDbContext _context;
 
     private const string NotesCacheKey = "notes:all";
 
-    public NoteService(IWebHostEnvironment env, ILogger<NoteService> logger, IConnectionMultiplexer redis)
+    public NoteService(IWebHostEnvironment env, ILogger<NoteService> logger, IConnectionMultiplexer redis, KeepDbContext context)
     {
         _logger = logger;
         _redis = redis.GetDatabase();
+        _context = context;
 
         var dataDir = Path.Combine(env.ContentRootPath, "Data");
 

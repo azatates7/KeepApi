@@ -117,10 +117,9 @@ namespace KeepApi.Controllers
         [HttpPost("oracleconnectiontest")]
         public async Task<IActionResult> TestOracleConnection(CancellationToken cancellationToken = default)
         {
-            var conn = new OracleConnection(_configuration["ConnectionStrings:Oracle"]);
-
             try
             {
+                var conn = new OracleConnection(_configuration["ConnectionStrings:Oracle"]);
                 conn.Open();
                 Console.WriteLine("Connected!");
                 conn.Close();
