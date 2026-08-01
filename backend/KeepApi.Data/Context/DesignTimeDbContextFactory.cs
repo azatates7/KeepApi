@@ -15,9 +15,7 @@ namespace KeepApi.Data.Context
 
             optionsBuilder.UseOracle(
                 "User Id=SYSTEM;Password=oRaclePassWord43;Data Source=localhost:1521/xe")
-                 .EnableSensitiveDataLogging()
-                 .EnableDetailedErrors()
-                 .LogTo(Console.WriteLine, LogLevel.Information);
+                 .EnableDetailedErrors();
 
             return new KeepDbContext(optionsBuilder.Options);
         }

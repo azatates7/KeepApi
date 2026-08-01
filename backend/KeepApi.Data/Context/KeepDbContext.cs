@@ -18,12 +18,22 @@ namespace KeepApi.Data.Context
             : base(options)
         {
         }
-        public DbSet<Note> Notes => Set<Note>();
+        public DbSet<Note> Notes { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(KeepDbContext).Assembly);
 
             base.OnModelCreating(builder);
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(bool))
+                    {
+                        property.SetColumnType("NUMBER(1)");
+                    }
+                }
+            }
 
             builder.Entity<IdentityUserClaim<Guid>>()
                 .ToTable("APP_USER_CLAIMS");

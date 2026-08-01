@@ -16,9 +16,7 @@ namespace KeepApi.Data.Extensions
             services.AddDbContext<KeepDbContext>(options =>
             {
                 options.UseOracle(connectionString)
-                   .EnableSensitiveDataLogging()
-                   .EnableDetailedErrors()
-                   .LogTo(Console.WriteLine, LogLevel.Information);
+                   .EnableDetailedErrors();
             });
 
             return services;
