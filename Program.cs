@@ -1,7 +1,9 @@
 using KeepApi.Data.Context;
+using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
 using KeepApi.Middleware;
 using KeepApi.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Serilog;
@@ -56,6 +58,24 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 builder.Services.AddKeepData(builder.Configuration);
 //builder.Services.AddDbContext<KeepDbContext>(options =>
 //    options.UseOracle(builder.Configuration["ConnectionStrings:Oracle"]));
+
+builder.Services
+.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+{
+    options.User.RequireUniqueEmail = true;
+
+    options.Password.RequiredLength = 8;
+
+    options.Password.RequireDigit = true;
+
+    options.Password.RequireUppercase = true;
+
+    options.Password.RequireLowercase = true;
+
+    options.Password.RequireNonAlphanumeric = false;
+})
+.AddEntityFrameworkStores<KeepDbContext>()
+.AddDefaultTokenProviders();
 
 var app = builder.Build();
 
