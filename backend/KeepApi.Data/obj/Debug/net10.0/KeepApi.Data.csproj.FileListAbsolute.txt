@@ -1,0 +1,16 @@
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\KeepApi.Data.deps.json
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\KeepApi.Data.dll
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\KeepApi.Data.pdb
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.csproj.AssemblyReference.cache
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.AssemblyInfoInputs.cache
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.AssemblyInfo.cs
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.csproj.CoreCompileInputs.cache
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.dll
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\refint\KeepApi.Data.dll
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.pdb
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\ref\KeepApi.Data.dll
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\KeepApi.Data.runtimeconfig.json
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\obj\Debug\net10.0\KeepApi.Data.genruntimeconfig.cache
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\appsettings.Development.json
+C:\Users\azata\source\repos\keep-todo-app\backend\KeepApi.Data\bin\Debug\net10.0\appsettings.json
