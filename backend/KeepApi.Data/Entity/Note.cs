@@ -30,5 +30,14 @@ namespace KeepApi.Data.Entity
         public Guid UserId { get; set; }
 
         public ApplicationUser User { get; set; } = null!;
+
+        //public Guid CreatedById { get; set; }
+        //public ApplicationUser CreatedBy { get; set; } = null!;
+
+        //public Guid? UpdatedById { get; set; }
+        //public ApplicationUser? UpdatedBy { get; set; }
+
+        //public Guid? DeletedById { get; set; }
+        //public ApplicationUser? DeletedBy { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 using KeepApi.Data.Entity;
-using KeepApi.Models;
+using KeepApi.Models.Request.Note;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;

@@ -20,6 +20,9 @@
       <Property Name="VWDPort" Value="&quot;62672&quot;" />
     </Properties>
   </Project>
+  <Project Path="../KeepApi.Application/KeepApi.Application.csproj" Id="c56de929-dece-47ef-a552-3c8d37633d75" />
+  <Project Path="../KeepApi.Common/KeepApi.Common.csproj" Id="995699b6-4c8f-4968-a0e9-bf38dd1c7a44" />
   <Project Path="../KeepApi.Data/KeepApi.Data.csproj" Id="9ad1bd68-464f-452c-a131-b7f850164733" />
+  <Project Path="../KeepApi.Infrastructure/KeepApi.Infrastructure.csproj" Id="a5c3a941-37d1-4f07-a009-bfb3bae1827a" />
   <Project Path="KeepApi.csproj" />
 </Solution>
