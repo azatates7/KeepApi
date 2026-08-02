@@ -30,9 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>	
 
 </Project>

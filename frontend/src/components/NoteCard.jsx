@@ -22,7 +22,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
     setShowReminder(false)
   }
   
-   function commitEdit() {
+    function commitEdit() {
+        console.log("commitEdit");
         if (!title.trim()) {
             setError("Başlık boş bırakılamaz.")
             return

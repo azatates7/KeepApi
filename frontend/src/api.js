@@ -22,6 +22,8 @@ export async function updateNote(id, note) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(note),
   })
+
+  console.log("updateNote called");
   if (!res.ok) throw new Error('Not Güncellenemedi')
   return res.json()
 }

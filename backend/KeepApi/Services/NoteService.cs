@@ -1,5 +1,7 @@
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
+using KeepApi.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.Text.Json;
@@ -104,26 +106,24 @@ public class NoteService
         }
     }
 
-    public async Task<Note?> UpdateAsync(string id, Note updated, CancellationToken cancellationToken)
+    public async Task<Note?> UpdateAsync(string id, [FromBody] UpdateNoteRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var notes = await GetDatabaseRecords(cancellationToken);
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
+            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return null;
 
-            existing.Title = updated.Title;
-            existing.Content = updated.Content;
-            existing.Color = updated.Color;
-            existing.Pinned = updated.Pinned;
-            existing.PinnedAt = updated.PinnedAt;
-            existing.Archived = updated.Archived;
-            existing.ArchievedAt = updated.ArchievedAt;
-            existing.ReminderAt = updated.ReminderAt;
-            existing.IsDeleted = updated.IsDeleted;
-            existing.Status = updated.Status;
+            existing.Title = request.Title;
+            existing.Content = request.Content;
+            existing.Color = request.Color;
+            existing.Pinned = request.Pinned;
+            existing.PinnedAt = request.PinnedAt;
+            existing.Archived = request.Archived;
+            existing.ArchievedAt = request.ArchievedAt;
+            existing.ReminderAt = request.ReminderAt;
+            existing.IsDeleted = request.IsDeleted;
+            existing.Status = request.Status;
             existing.UpdatedAt = DateTime.UtcNow;
 
             if (string.IsNullOrWhiteSpace(existing?.Title) || string.IsNullOrWhiteSpace(existing?.Content))
@@ -131,7 +131,7 @@ public class NoteService
                 throw new Exception("Not title veya içerik boş olamaz.");
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            var result = await _context.SaveChangesAsync(cancellationToken);
 
             await ClearCacheAsync();
 
@@ -150,9 +150,7 @@ public class NoteService
     {
         try
         {
-            var notes = await GetDatabaseRecords(cancellationToken);
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
+            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
@@ -179,9 +177,7 @@ public class NoteService
     {
         try
         {
-            var notes = await GetDatabaseRecords(cancellationToken);
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
+            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
@@ -208,9 +204,7 @@ public class NoteService
     {
         try
         {
-            var notes = await GetDatabaseRecords(cancellationToken);
-
-            var existing = notes.FirstOrDefault(x => x.Id == id);
+            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
 
             if (existing is null)
                 return false;

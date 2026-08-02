@@ -94,7 +94,16 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<KeepDbContext>();
-        await DatabaseSeeder.SeedAsync(context);
+        var userManager =
+            services.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var roleManager =
+            services.GetRequiredService<RoleManager<ApplicationRole>>();
+
+        await DatabaseSeeder.SeedAsync(
+            context,
+            userManager,
+            roleManager);
     }
     catch (Exception ex)
     {

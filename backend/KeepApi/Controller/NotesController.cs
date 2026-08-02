@@ -1,4 +1,5 @@
 using KeepApi.Data.Entity;
+using KeepApi.Models;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
@@ -73,9 +74,9 @@ namespace KeepApi.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(Note), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Note>> Update(string id, [FromBody] Note note, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<Note>> Update(string id, [FromBody] UpdateNoteRequest request, CancellationToken cancellationToken = default)
         {
-            var updated = await _noteService.UpdateAsync(id, note, cancellationToken);
+            var updated = await _noteService.UpdateAsync(id, request, cancellationToken);
             return updated is null ? NotFound() : Ok(updated);
         }
 

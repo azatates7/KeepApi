@@ -46,6 +46,7 @@ export default function App() {
   }
 
     async function handleUpdate(id, patch) {
+    console.log("handleUpdate", id, patch);
     if ("title" in patch && !patch.title.trim()) {
         alert("Başlık boş bırakılamaz.")
         return
@@ -59,8 +60,10 @@ export default function App() {
     setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)))
     const current = notes.find((n) => n.id === id)
     if (!current) return
+
     const updated = await updateNote(id, { ...current, ...patch })
     setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)))
+    console.log("handleUpdateDone", id, patch);
   }
 
   async function handleDelete(id) {
