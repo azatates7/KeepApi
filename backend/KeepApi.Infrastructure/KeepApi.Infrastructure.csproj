@@ -22,7 +22,7 @@
   <ItemGroup>
     <Folder Include="Authentication\CurrentUser\" />
     <Folder Include="Authentication\Identity\" />
-    <Folder Include="Services\" />
+    <Folder Include="Authentication\Services\" />
   </ItemGroup>
 
   <ItemGroup>

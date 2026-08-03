@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace KeepApi.Infrastructure.Extensions
+namespace KeepApi.Infrastructure.Authentication.Extensions
 {
     public static class DependencyInjection
     {

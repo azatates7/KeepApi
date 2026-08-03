@@ -1,8 +1,8 @@
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
+using KeepApi.Infrastructure.Authentication.Extensions;
 using KeepApi.Infrastructure.Authentication.Jwt;
-using KeepApi.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
