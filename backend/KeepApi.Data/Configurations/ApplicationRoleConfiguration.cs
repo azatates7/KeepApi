@@ -13,7 +13,6 @@ namespace KeepApi.Data.Configurations
         public void Configure(
             EntityTypeBuilder<ApplicationRole> builder)
         {
-            builder.ToTable("APP_ROLES");
         }
     }
 }

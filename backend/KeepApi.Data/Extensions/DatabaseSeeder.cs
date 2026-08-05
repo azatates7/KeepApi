@@ -2,6 +2,9 @@
 using KeepApi.Data.Entity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing;
+using System.Net.NetworkInformation;
+using System.Reflection.Metadata;
 
 namespace KeepApi.Data.Extensions;
 
@@ -37,13 +40,14 @@ public static class DatabaseSeeder
                     {
                         await roleManager.CreateAsync(new ApplicationRole
                         {
-                            Name = "Admin"
+                            Name = role
                         });
                     }
                 }
             }
 
             var admin = await userManager.FindByNameAsync("admin");
+            var user = await userManager.FindByNameAsync("testUser");
 
             if (admin == null)
             {
@@ -67,9 +71,36 @@ public static class DatabaseSeeder
                 }
             }
 
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    UserName = "testUser",
+                    Email = "user@test.com",
+                    EmailConfirmed = true,
+                    FirstName = "Test",
+                    LastName = "User",
+                    CreatedAt = DateTime.Now,
+                    IsDeleted = false,
+                    Status = 1
+                };
+
+                var createResult = await userManager.CreateAsync(user, "User123!");
+
+                if (!createResult.Succeeded)
+                {
+                    throw new Exception(string.Join(",", createResult.Errors.Select(x => x.Description)));
+                }
+            }
+
             if (!await userManager.IsInRoleAsync(admin, "Admin"))
             {
                 await userManager.AddToRoleAsync(admin, "Admin");
+            }
+
+            if (!await userManager.IsInRoleAsync(user, "User"))
+            {
+                await userManager.AddToRoleAsync(user, "User");
             }
 
             var countOfNote = await context.Notes.CountAsync();
@@ -104,11 +135,22 @@ public static class DatabaseSeeder
                         IsDeleted = false,
                         User = admin,
                         UserId = admin.Id
+                    },
+                    new()
+                    {
+                        Title = "TodoUser",
+                        Content = "Oracle bağlantısını gerçekleştir.",
+                        Color = "green",
+                        CreatedAt = DateTime.Now,
+                        Status = 1,
+                        IsDeleted = false,
+                        User = user,
+                        UserId = user.Id
                     }
                 };
 
                 await context.Notes.AddRangeAsync(notes);
-                var result1 = await context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
         }
         catch (Exception ex)

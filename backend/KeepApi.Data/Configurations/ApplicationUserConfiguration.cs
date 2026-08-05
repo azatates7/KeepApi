@@ -13,8 +13,6 @@ namespace KeepApi.Data.Configurations
         public void Configure(
             EntityTypeBuilder<ApplicationUser> builder)
         {
-            builder.ToTable("APP_USERS");
-
             builder.Property(x => x.FirstName)
                 .HasMaxLength(100);
 

@@ -10,4 +10,8 @@
     <Folder Include="Validators\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />
+  </ItemGroup>
+
 </Project>

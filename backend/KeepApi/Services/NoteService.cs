@@ -110,7 +110,9 @@ public class NoteService
     {
         try
         {
-            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
+            await ClearCacheAsync();
+
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return null;
 
@@ -150,7 +152,9 @@ public class NoteService
     {
         try
         {
-            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
+            await ClearCacheAsync();
+
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
@@ -177,7 +181,9 @@ public class NoteService
     {
         try
         {
-            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
+            await ClearCacheAsync();
+
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
@@ -204,7 +210,9 @@ public class NoteService
     {
         try
         {
-            var existing = await _context.Notes.FirstAsync(x => x.Id == id, cancellationToken);
+            await ClearCacheAsync();
+
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
             if (existing is null)
                 return false;

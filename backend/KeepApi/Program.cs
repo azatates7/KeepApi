@@ -1,6 +1,7 @@
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
+using KeepApi.Infrastructure.Authentication.Extensions;
 using KeepApi.Middleware;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Identity;
@@ -19,15 +20,15 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 builder.Services.AddScoped<NoteService>(); 
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Keep Todo API",
         Version = "v1",
-        Description = "JSON dosyası tabanlı not/todo API'si (DB yok, Data/notes.json kullanılır)."
+        Description = "Oracle + ASP.NET Core Identity tabanlı not/todo API'si. Uçlar Bearer JWT ile korunur."
     });
 
     // NotesController'daki /// <summary> yorumlarının Swagger UI'da görünmesi için.
@@ -37,6 +38,21 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlPath);
     }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Bearer token. Example: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+    });
 });
 
 builder.Services.AddCors(options => // React policy allow
@@ -56,8 +72,6 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 });
 
 builder.Services.AddKeepData(builder.Configuration);
-//builder.Services.AddDbContext<KeepDbContext>(options =>
-//    options.UseOracle(builder.Configuration["ConnectionStrings:Oracle"]));
 
 builder.Services
 .AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -73,9 +87,19 @@ builder.Services
     options.Password.RequireLowercase = true;
 
     options.Password.RequireNonAlphanumeric = false;
+
+    options.Lockout.MaxFailedAccessAttempts = 5;
+
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+
+    options.Lockout.AllowedForNewUsers = true;
 })
 .AddEntityFrameworkStores<KeepDbContext>()
 .AddDefaultTokenProviders();
+
+// JWT Bearer authentication, authorization) KeepApi.Infrastructure katmanında kurulu.
+// AddIdentity'den Sonra çağrılmalı; aksi halde Identity'nin varsayılan cookie şemasını geçersiz kılmaz.
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
@@ -113,6 +137,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseMiddleware<LoggingMiddleware>();
 app.MapControllers();
 

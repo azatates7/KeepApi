@@ -22,7 +22,6 @@
   <ItemGroup>
     <Folder Include="Authentication\CurrentUser\" />
     <Folder Include="Authentication\Identity\" />
-    <Folder Include="Authentication\Services\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +33,6 @@
     <ProjectReference Include="..\KeepApi.Application\KeepApi.Application.csproj" />
     <ProjectReference Include="..\KeepApi.Common\KeepApi.Common.csproj" />
     <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />
-    <ProjectReference Include="..\KeepApi\KeepApi.csproj" />
   </ItemGroup>
 
 </Project>

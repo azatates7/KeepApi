@@ -29,11 +29,14 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Models\Common\" />
     <Folder Include="Models\Response\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KeepApi.Application\KeepApi.Application.csproj" />
+    <ProjectReference Include="..\KeepApi.Common\KeepApi.Common.csproj" />
+    <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />
+    <ProjectReference Include="..\KeepApi.Infrastructure\KeepApi.Infrastructure.csproj" />
   </ItemGroup>	
 
 </Project>

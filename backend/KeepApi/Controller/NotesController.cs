@@ -1,8 +1,10 @@
 using KeepApi.Data.Entity;
 using KeepApi.Models.Request.Note;
 using KeepApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
+using System.Security.Claims;
 
 namespace KeepApi.Controllers
 {
@@ -13,6 +15,7 @@ namespace KeepApi.Controllers
     [ApiController]
     [Route("api/notes")]
     [Produces("application/json")]
+    [Authorize]
     public class NotesController : ControllerBase
     {
         private readonly NoteService _noteService;
@@ -116,6 +119,7 @@ namespace KeepApi.Controllers
         }
 
         [HttpPost("oracleconnectiontest")]
+        [AllowAnonymous]
         public async Task<IActionResult> TestOracleConnection(CancellationToken cancellationToken = default)
         {
             try
@@ -131,6 +135,18 @@ namespace KeepApi.Controllers
             }
 
             return Ok();
+        }
+
+        private Guid GetCurrentUserId()
+        {
+            var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!Guid.TryParse(value, out var userId))
+            {
+                throw new UnauthorizedAccessException("Token içinde kullanıcı bilgisi bulunamadı.");
+            }
+
+            return userId;
         }
     }
 }
