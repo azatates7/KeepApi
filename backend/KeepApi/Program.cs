@@ -41,12 +41,17 @@ builder.Services.AddSwaggerGen(options =>
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Bearer token. Example: Bearer {token}",
+        //Description = "JWT Bearer token. Example: Bearer {token}",
+        //Name = "Authorization",
+        //In = ParameterLocation.Header,
+        //Type = SecuritySchemeType.Http,
+        //Scheme = "Bearer",
+        //BearerFormat = "JWT"
+
+        Description = "JWT Bearer token. \"Bearer \" ön ekiyle birlikte girin. Örnek: Bearer eyJhbGciOiJIUzI1NiIs...",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT"
+        Type = SecuritySchemeType.ApiKey
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement

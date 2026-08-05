@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using KeepApi.Common.Models;
-using KeepApi.Application.Models.Response.Auth;
-using KeepApi.Application.Models.Request.Auth;
+﻿using System.Security.Claims;
 using KeepApi.Application.Interfaces;
 using KeepApi.Application.Models.Common.Auth;
+using KeepApi.Application.Models.Request.Auth;
+using KeepApi.Application.Models.Response.Auth;
+using KeepApi.Common.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace KeepApi.Controller
-{    
+{
     /// <summary>
     /// Login, kayıt ve mevcut kullanıcı bilgisi için Identity/JWT tabanlı auth controller.
     /// </summary>
@@ -57,6 +57,58 @@ namespace KeepApi.Controller
             {
                 await _authService.RegisterAsync(request);
                 return Ok(ApiResponse<object>.Ok(new { }, "Kayıt başarılı."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>Kayıt sırasında e-postaya gönderilen doğrulama kodunu kontrol eder.</summary>
+        /// <response code="200">Doğrulandı.</response>
+        /// <response code="400">Kod hatalı veya süresi dolmuş.</response>
+        [HttpPost("verify-email")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            try
+            {
+                await _authService.VerifyEmailAsync(request);
+                return Ok(ApiResponse<object>.Ok(new { }, "E-posta doğrulandı. Artık giriş yapabilirsiniz."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>E-posta kayıtlıysa, o adrese 6 haneli bir şifre sıfırlama kodu gönderir.
+        /// Güvenlik nedeniyle e-posta kayıtlı olmasa da her zaman 200 döner.</summary>
+        /// <response code="200">İstek işlendi (e-posta kayıtlıysa kod gönderildi).</response>
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            await _authService.ForgotPasswordAsync(request);
+            return Ok(ApiResponse<object>.Ok(new { }, "E-posta adresiniz sistemde kayıtlıysa, sıfırlama kodu gönderildi."));
+        }
+
+        /// <summary>E-postaya gönderilen kodu doğrular ve doğruysa yeni şifreyi atar.</summary>
+        /// <response code="200">Şifre güncellendi.</response>
+        /// <response code="400">Kod hatalı/süresi dolmuş veya şifreler eşleşmiyor.</response>
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                await _authService.ResetPasswordAsync(request);
+                return Ok(ApiResponse<object>.Ok(new { }, "Şifreniz başarıyla güncellendi."));
             }
             catch (InvalidOperationException ex)
             {

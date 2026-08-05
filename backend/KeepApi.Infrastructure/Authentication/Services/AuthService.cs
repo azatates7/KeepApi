@@ -4,6 +4,8 @@ using KeepApi.Application.Models.Request.Auth;
 using KeepApi.Application.Models.Response.Auth;
 using KeepApi.Data.Entity;
 using KeepApi.Infrastructure.Authentication.Jwt;
+using KeepApi.Infrastructure.Authentication.PasswordReset;
+using KeepApi.Infrastructure.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
@@ -11,18 +13,26 @@ namespace KeepApi.Infrastructure.Authentication.Services
 {
     public sealed class AuthService : IAuthService
     {
+        private static readonly TimeSpan ResetCodeTtl = TimeSpan.FromMinutes(10);
+
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IJwtService _jwtService;
         private readonly JwtSettings _jwtSettings;
+        private readonly IPasswordResetCodeStore _resetCodeStore;
+        private readonly IEmailService _emailService;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             IJwtService jwtService,
-            IOptions<JwtSettings> jwtOptions)
+            IOptions<JwtSettings> jwtOptions,
+            IPasswordResetCodeStore resetCodeStore,
+            IEmailService emailService)
         {
             _userManager = userManager;
             _jwtService = jwtService;
             _jwtSettings = jwtOptions.Value;
+            _resetCodeStore = resetCodeStore;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -50,6 +60,12 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             await _userManager.ResetAccessFailedCountAsync(user);
 
+            if (!user.EmailConfirmed)
+            {
+                throw new UnauthorizedAccessException(
+                    "E-posta adresiniz henüz doğrulanmadı. Lütfen e-postanıza gönderilen kodu girin.");
+            }
+
             var roles = await _userManager.GetRolesAsync(user);
             var token = await _jwtService.GenerateTokenAsync(user);
 
@@ -76,6 +92,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
             {
                 UserName = request.UserName,
                 Email = request.Email,
+                EmailConfirmed = false,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 CreatedAt = DateTime.Now,
@@ -95,6 +112,16 @@ namespace KeepApi.Infrastructure.Authentication.Services
             {
                 await _userManager.AddToRoleAsync(user, "User");
             }
+
+            var code = _resetCodeStore.GenerateCode(user.Id, ResetCodeTtl);
+
+            await _emailService.SendAsync(
+                user.Email!,
+                "Keep Todo - Hesap Doğrulama Kodu",
+                $"Merhaba {user.FirstName},\n\n" +
+                $"Hesabınızı doğrulamak için kodunuz: {code}\n" +
+                $"Bu kod {ResetCodeTtl.TotalMinutes:0} dakika geçerlidir.\n\n" +
+                "Bu kaydı siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.");
         }
 
         public async Task<UserDto> MeAsync(Guid userId)
@@ -113,6 +140,86 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 LastName = user.LastName,
                 Roles = roles
             };
+        }
+
+        public async Task ForgotPasswordAsync(ForgotPasswordRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+
+            // Kayıtlı olmayan bir e-posta için de sessizce başarılı dönüyoruz;
+            // aksi halde "bu e-posta sistemde var mı yok mu" bilgisini dışarı sızdırırız.
+            if (user is null || user.IsDeleted)
+            {
+                return;
+            }
+
+            var code = _resetCodeStore.GenerateCode(user.Id, ResetCodeTtl);
+
+            await _emailService.SendAsync(
+                user.Email!,
+                "Keep Todo - Şifre Sıfırlama Kodu",
+                $"Merhaba {user.FirstName},\n\n" +
+                $"Şifre sıfırlama kodunuz: {code}\n" +
+                $"Bu kod {ResetCodeTtl.TotalMinutes:0} dakika geçerlidir.\n\n" +
+                "Bu isteği siz yapmadıysanız bu e-postayı yok sayabilirsiniz.");
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            if (request.NewPassword != request.ConfirmNewPassword)
+            {
+                throw new InvalidOperationException("Şifreler eşleşmiyor.");
+            }
+
+            var user = await _userManager.FindByEmailAsync(request.Email);
+
+            if (user is null || user.IsDeleted)
+            {
+                throw new InvalidOperationException("Kod veya e-posta hatalı.");
+            }
+
+            if (!_resetCodeStore.TryValidateAndConsume(user.Id, request.Code))
+            {
+                throw new InvalidOperationException("Kod hatalı veya süresi dolmuş.");
+            }
+
+            var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    string.Join(" ", result.Errors.Select(e => e.Description)));
+            }
+        }
+
+        public async Task VerifyEmailAsync(VerifyEmailRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+
+            if (user is null || user.IsDeleted)
+            {
+                throw new InvalidOperationException("Kod veya e-posta hatalı.");
+            }
+
+            if (user.EmailConfirmed)
+            {
+                return; // zaten doğrulanmış, sessizce başarı say
+            }
+
+            if (!_resetCodeStore.TryValidateAndConsume(user.Id, request.Code))
+            {
+                throw new InvalidOperationException("Kod hatalı veya süresi dolmuş.");
+            }
+
+            user.EmailConfirmed = true;
+            var updateResult = await _userManager.UpdateAsync(user);
+
+            if (!updateResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    string.Join(" ", updateResult.Errors.Select(e => e.Description)));
+            }
         }
     }
 }

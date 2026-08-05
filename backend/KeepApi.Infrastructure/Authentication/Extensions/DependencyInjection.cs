@@ -1,7 +1,9 @@
 ﻿using System.Text;
 using KeepApi.Application.Interfaces;
 using KeepApi.Infrastructure.Authentication.Jwt;
+using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Authentication.Services;
+using KeepApi.Infrastructure.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,8 +15,9 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
     {
         /// <summary>
         /// Infrastructure katmanına ait tüm auth/JWT kayıtları:
-        /// JwtSettings binding, IJwtService/IAuthService, JWT Bearer authentication
-        /// ve authorization. Host projesi (KeepApi) sadece bu metodu çağırır.
+        /// JwtSettings binding, IJwtService/IAuthService, JWT Bearer authentication,
+        /// authorization, şifre sıfırlama kodu deposu ve e-posta gönderimi.
+        /// Host projesi (KeepApi) sadece bu metodu çağırır.
         /// </summary>
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
@@ -23,8 +26,17 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
             services.Configure<JwtSettings>(
                 configuration.GetSection(JwtSettings.SectionName));
 
+            services.Configure<SmtpSettings>(
+                configuration.GetSection(SmtpSettings.SectionName));
+
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IEmailService, SmtpEmailService>();
+
+            // Şifre sıfırlama kodları kısa ömürlü (10 dk) olduğu için tek instance'lık
+            // bellek içi depo yeterli; birden fazla API instance'ı (load balancer arkasında)
+            // çalıştırırsanız bunun yerine Redis tabanlı bir implementasyon gerekir.
+            services.AddSingleton<IPasswordResetCodeStore, InMemoryPasswordResetCodeStore>();
 
             var jwtSettings =
                 configuration

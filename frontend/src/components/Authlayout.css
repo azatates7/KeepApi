@@ -1,0 +1,278 @@
+/* ---- shell (two columns, like the reference design) ---- */
+
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    background: var(--paper);
+}
+
+.auth-left {
+    flex: 1 1 460px;
+    display: flex;
+    justify-content: center;
+    padding: 48px 32px;
+}
+
+.auth-left-inner {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-logo {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--accent);
+    margin-bottom: 48px;
+}
+
+.auth-content {
+    flex: 1;
+}
+
+.auth-ip {
+    margin: 32px 0 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+
+.auth-right {
+    flex: 1 1 480px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, var(--color-sky), var(--color-sand));
+    padding: 48px;
+}
+
+@media (min-width: 860px) {
+    .auth-right {
+        display: flex;
+    }
+}
+
+/* ---- "Yapılacaklar" not görseli ---- */
+
+.todo-note-card {
+    width: 100%;
+    max-width: 340px;
+    background: var(--color-sand);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+    box-shadow: 0 12px 32px rgba(35, 38, 43, 0.14);
+    transform: rotate(-2deg);
+}
+
+.todo-note-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--ink);
+    margin-bottom: 18px;
+}
+
+.todo-note-pin {
+    font-size: 18px;
+    transform: rotate(20deg);
+}
+
+.todo-note-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.todo-note-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--ink);
+}
+
+.todo-checkbox {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--ink-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--paper-raised);
+}
+
+.todo-note-item-done {
+    color: var(--ink-soft);
+    text-decoration: line-through;
+}
+
+    .todo-note-item-done .todo-checkbox {
+        background: var(--accent);
+        border-color: var(--accent);
+    }
+
+/* ---- shared auth form controls (Login + Register) ---- */
+
+.auth-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    color: var(--ink);
+}
+
+.auth-subtitle {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+}
+
+.auth-input {
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+    .auth-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+.auth-input-code {
+    letter-spacing: 0.3em;
+    font-family: var(--font-mono);
+    text-align: center;
+    font-size: 18px;
+}
+
+.auth-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.auth-row-split {
+    display: flex;
+    gap: 12px;
+}
+
+    .auth-row-split .auth-label {
+        flex: 1;
+    }
+
+.auth-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    user-select: none;
+}
+
+    .auth-checkbox input {
+        accent-color: var(--accent);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+    }
+
+.auth-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent);
+    font-size: 13px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+    .auth-link:hover {
+        text-decoration: underline;
+    }
+
+.auth-back {
+    align-self: center;
+    margin-top: -4px;
+}
+
+.auth-submit {
+  margin-top: 4px;
+  background: #ee6c24;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+    .auth-submit:hover {
+      background: #d95c18;
+    }
+
+    .auth-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+.auth-message {
+    margin: 0;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.auth-message-error {
+    color: var(--danger);
+    background: rgba(177, 80, 63, 0.1);
+}
+
+.auth-message-info {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.auth-switch {
+    margin: 20px 0 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
