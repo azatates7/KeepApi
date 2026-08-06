@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace KeepApi.Data.Common
+namespace KeepApi.Data.Entity
 {
     public abstract class BaseEntity
     {

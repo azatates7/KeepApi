@@ -1,7 +1,9 @@
+using KeepApi.Application.Interfaces;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
 using KeepApi.Infrastructure.Authentication.Extensions;
+using KeepApi.Infrastructure.Authentication.Services;
 using KeepApi.Middleware;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Identity;
@@ -105,6 +107,8 @@ builder.Services
 // JWT Bearer authentication, authorization) KeepApi.Infrastructure katmanında kurulu.
 // AddIdentity'den Sonra çağrılmalı; aksi halde Identity'nin varsayılan cookie şemasını geçersiz kılmaz.
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var app = builder.Build();
 

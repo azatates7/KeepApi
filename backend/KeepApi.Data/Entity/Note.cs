@@ -1,5 +1,4 @@
-﻿using KeepApi.Data.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
@@ -31,13 +30,13 @@ namespace KeepApi.Data.Entity
 
         public ApplicationUser User { get; set; } = null!;
 
-        //public Guid CreatedById { get; set; }
-        //public ApplicationUser CreatedBy { get; set; } = null!;
+        public Guid? CreatedById { get; set; }
+        public ApplicationUser CreatedBy { get; set; } = null!;
 
-        //public Guid? UpdatedById { get; set; }
-        //public ApplicationUser? UpdatedBy { get; set; }
+        public Guid? UpdatedById { get; set; }
+        public ApplicationUser? UpdatedBy { get; set; }
 
-        //public Guid? DeletedById { get; set; }
-        //public ApplicationUser? DeletedBy { get; set; }
+        public Guid? DeletedById { get; set; }
+        public ApplicationUser? DeletedBy { get; set; }
     }
 }

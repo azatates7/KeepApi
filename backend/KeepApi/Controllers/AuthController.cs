@@ -7,7 +7,7 @@ using KeepApi.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace KeepApi.Controller
+namespace KeepApi.Controllers
 {
     /// <summary>
     /// Login, kayıt ve mevcut kullanıcı bilgisi için Identity/JWT tabanlı auth controller.

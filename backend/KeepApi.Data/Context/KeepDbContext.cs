@@ -2,9 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace KeepApi.Data.Context
 {
@@ -55,6 +52,21 @@ namespace KeepApi.Data.Context
                 entity.HasOne(x => x.User)
                       .WithMany(x => x.Notes)
                       .HasForeignKey(x => x.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.CreatedBy)
+                      .WithMany()
+                      .HasForeignKey(x => x.CreatedById)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.UpdatedBy)
+                      .WithMany()
+                      .HasForeignKey(x => x.UpdatedById)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.DeletedBy)
+                      .WithMany()
+                      .HasForeignKey(x => x.DeletedById)
                       .OnDelete(DeleteBehavior.Restrict);
             });
         }

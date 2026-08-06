@@ -1,9 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace KeepApi.Data.Context
 {
@@ -11,10 +8,24 @@ namespace KeepApi.Data.Context
     {
         public KeepDbContext CreateDbContext(string[] args)
         {
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var connectionString = configuration.GetConnectionString("OracleConnection");
+
             var optionsBuilder = new DbContextOptionsBuilder<KeepDbContext>();
 
-            optionsBuilder.UseOracle(
-                "User Id=SYSTEM;Password=oRaclePassWord43;Data Source=localhost:1521/xe")
+            //optionsBuilder.UseOracle(
+            //    "User Id=SYSTEM;Password=oRaclePassWord43;Data Source=localhost:1521/xe")
+            //     .EnableDetailedErrors();
+
+            optionsBuilder.UseOracle(connectionString)
                  .EnableDetailedErrors();
 
             return new KeepDbContext(optionsBuilder.Options);

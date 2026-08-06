@@ -83,6 +83,14 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
         public async Task RegisterAsync(RegisterRequest request)
         {
+            var user1 = await _userManager.FindByNameAsync(request.UserName.Trim());
+            var user2 = await _userManager.FindByEmailAsync(request.Email.Trim());
+
+            if (user1 is not null || user2 is not null)
+            {
+                throw new InvalidOperationException("Kullanıcı adı/e-posta zaten kayıtlı.");
+            }
+
             if (request.Password != request.ConfirmPassword)
             {
                 throw new InvalidOperationException("Şifreler eşleşmiyor.");

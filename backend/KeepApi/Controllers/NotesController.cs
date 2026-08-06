@@ -12,10 +12,10 @@ namespace KeepApi.Controllers
     /// Not/todo kayıtları için CRUD api controller class
     /// http://localhost:5080/swagger/index.html
     /// </summary>
+    [Authorize]
     [ApiController]
     [Route("api/notes")]
     [Produces("application/json")]
-    [Authorize]
     public class NotesController : ControllerBase
     {
         private readonly NoteService _noteService;
@@ -35,9 +35,10 @@ namespace KeepApi.Controllers
         {
             return Ok(await _noteService.GetAsync(cancellationToken));
         }
-        
+
         /// <summary>Tüm notları listeler (aktif + arşivlenmiş + silinmiş).</summary>
         /// <response code="200">Not listesi döner.</response>
+        [Authorize(Roles = "Admin")]
         [HttpGet("getall")]
         [ProducesResponseType(typeof(List<Note>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<Note>>> GetAll(CancellationToken cancellationToken = default)
@@ -63,9 +64,9 @@ namespace KeepApi.Controllers
         /// <response code="201">Not oluşturuldu, Location header'ı yeni kaydın adresini gösterir.</response>
         [HttpPost]
         [ProducesResponseType(typeof(Note), StatusCodes.Status201Created)]
-        public async Task<ActionResult<Note>> Create([FromBody] Note note, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<Note>> Create([FromBody] CreateNoteRequest request, CancellationToken cancellationToken = default)
         {
-            var created = await _noteService.CreateAsync(note, cancellationToken);
+            var created = await _noteService.CreateAsync(request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -124,7 +125,7 @@ namespace KeepApi.Controllers
         {
             try
             {
-                var conn = new OracleConnection(_configuration["ConnectionStrings:Oracle"]);
+                var conn = new OracleConnection(_configuration["ConnectionStrings:OracleConnection"]);
                 conn.Open();
                 Console.WriteLine("Connected!");
                 conn.Close();

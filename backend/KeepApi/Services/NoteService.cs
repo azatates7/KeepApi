@@ -1,6 +1,8 @@
+using KeepApi.Application.Interfaces;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Models.Request.Note;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
@@ -15,11 +17,7 @@ namespace KeepApi.Services;
 /// </summary>
 public class NoteService
 {
-    //private readonly string _filePath;
-    //private readonly SemaphoreSlim _fileLock = new(1, 1);
-
-    private static readonly TimeSpan CacheExpiration =
-        TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(30);
 
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -30,19 +28,25 @@ public class NoteService
     private readonly ILogger<NoteService> _logger;
     private readonly IDatabase _redis;
     private readonly KeepDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    private const string NotesCacheKey = "notes:all";
-
-    public NoteService(IWebHostEnvironment env, ILogger<NoteService> logger, IConnectionMultiplexer redis, KeepDbContext context)
+    public NoteService(
+        IWebHostEnvironment env,
+        ILogger<NoteService> logger,
+        IConnectionMultiplexer redis,
+        KeepDbContext context,
+        ICurrentUserService currentUser)
     {
         _logger = logger;
         _redis = redis.GetDatabase();
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<List<Note>> GetAsync(CancellationToken cancellationToken)
     {
         var results = await GetNotesWithRedisControl(cancellationToken);
+        var currentUserId = GetCurrentUserId();
 
         _logger.LogInformation("Notes have been read.");
 
@@ -61,6 +65,7 @@ public class NoteService
     public async Task<List<Note>> GetDeletedAsync(CancellationToken cancellationToken)
     {
         var results = await GetNotesWithRedisControl(cancellationToken);
+        var currentUserId = GetCurrentUserId();
 
         _logger.LogInformation("Trash notes loaded. Total: {TotalCount}, Deleted: {DeletedCount}", results.Count, results.Count(x => x.IsDeleted));
 
@@ -72,30 +77,41 @@ public class NoteService
     public async Task<Note?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         var notes = await GetNotesWithRedisControl(cancellationToken);
+        var currentUserId = GetCurrentUserId();
+
         return notes.FirstOrDefault(x => x.Id == id);
     }
 
-    public async Task<Note> CreateAsync(Note note, CancellationToken cancellationToken)
+    public async Task<Note> CreateAsync(CreateNoteRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(note?.Title) || string.IsNullOrWhiteSpace(note?.Content))
+            if (string.IsNullOrWhiteSpace(request?.Title) || string.IsNullOrWhiteSpace(request?.Content))
             {
                 throw new Exception("Not title veya içerik boş olamaz.");
             }
 
-            note.Id = Guid.NewGuid().ToString("N");
-            note.CreatedAt = DateTime.UtcNow;
-            note.UpdatedAt = DateTime.UtcNow;
-            note.IsDeleted = false;
-            note.Status = 1;
+            var currentUserId = GetCurrentUserId();
 
+            var note = new Note
+            {
+                Title = request.Title,
+                Content = request.Content,
+                Color = request.Color,
+                UserId = currentUserId,
+                CreatedById = currentUserId,
+            };
+
+            note.Id = Guid.NewGuid().ToString("N");
             await _context.Notes.AddAsync(note, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
-            await ClearCacheAsync();
+            await ClearCacheAsync(currentUserId);
 
-            _logger.LogInformation("Note created. Id: {Id}", note.Id);
+            _logger.LogInformation(
+            "User {UserId} created note {NoteId}",
+            currentUserId,
+            note.Id);
 
             return note;
         }
@@ -110,9 +126,14 @@ public class NoteService
     {
         try
         {
-            await ClearCacheAsync();
+            if (string.IsNullOrWhiteSpace(request?.Title) || string.IsNullOrWhiteSpace(request?.Content))
+            {
+                throw new Exception("Not title veya içerik boş olamaz.");
+            }
 
-            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            var currentUserId = GetCurrentUserId();
+
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.UserId == currentUserId && x.Id == id, cancellationToken);
             if (existing is null)
                 return null;
 
@@ -126,18 +147,13 @@ public class NoteService
             existing.ReminderAt = request.ReminderAt;
             existing.IsDeleted = request.IsDeleted;
             existing.Status = request.Status;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            if (string.IsNullOrWhiteSpace(existing?.Title) || string.IsNullOrWhiteSpace(existing?.Content))
-            {
-                throw new Exception("Not title veya içerik boş olamaz.");
-            }
+            existing.UpdatedById = currentUserId;
 
             var result = await _context.SaveChangesAsync(cancellationToken);
 
-            await ClearCacheAsync();
+            await ClearCacheAsync(currentUserId);
 
-            _logger.LogInformation("Note updated. Id: {Id}", id);
+            _logger.LogInformation($"User {currentUserId} updated note {id}");
 
             return existing;
         }
@@ -152,19 +168,19 @@ public class NoteService
     {
         try
         {
-            await ClearCacheAsync();
+            var currentUserId = GetCurrentUserId();
 
-            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.UserId == currentUserId && x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
             existing.IsDeleted = true;
             existing.Status = 1;
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.DeletedById = currentUserId;
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            await ClearCacheAsync();
+            await ClearCacheAsync(currentUserId);
 
             _logger.LogInformation("Note moved to trash. Id: {Id}", id);
 
@@ -181,19 +197,19 @@ public class NoteService
     {
         try
         {
-            await ClearCacheAsync();
+            var currentUserId = GetCurrentUserId();
 
-            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.UserId == currentUserId && x.Id == id, cancellationToken);
             if (existing is null)
                 return false;
 
             existing.IsDeleted = false;
             existing.Status = 1;
-            existing.UpdatedAt = DateTime.Now;
+            existing.UpdatedById = currentUserId;
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            await ClearCacheAsync();
+            await ClearCacheAsync(currentUserId);
 
             _logger.LogInformation("Note restored. Id: {Id}", id);
 
@@ -210,20 +226,20 @@ public class NoteService
     {
         try
         {
-            await ClearCacheAsync();
+            var currentUserId = GetCurrentUserId();
 
-            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            var existing = await _context.Notes.FirstOrDefaultAsync(x => x.UserId == currentUserId && x.Id == id, cancellationToken);
 
             if (existing is null)
                 return false;
 
             existing.Status = 0;
             existing.IsDeleted = true;
-            existing.UpdatedAt = DateTime.Now;
+            existing.DeletedById = currentUserId;
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            await ClearCacheAsync();
+            await ClearCacheAsync(currentUserId);
 
             _logger.LogInformation("Note permanently deleted. Id: {Id}", id);
 
@@ -236,12 +252,13 @@ public class NoteService
         }
     }
 
-    private async Task<List<Note>> GetDatabaseRecords(CancellationToken cancellationToken)
+    private async Task<List<Note>> GetDatabaseRecords(Guid userId, CancellationToken cancellationToken)
     {
         try
         {
             return await _context.Notes
                         .AsNoTracking()
+                        .Where(x => x.UserId == userId)
                         .OrderByDescending(x => x.CreatedAt)
                         .ToListAsync(cancellationToken) ?? [];
         }
@@ -252,17 +269,25 @@ public class NoteService
         }
     }
 
-    private async Task ClearCacheAsync()
+    private string GetCacheKey(Guid userId)
     {
-        await _redis.KeyDeleteAsync(NotesCacheKey);
+        return $"notes:user:{userId}";
+    }
+
+    private async Task ClearCacheAsync(Guid userId)
+    {
+        await _redis.KeyDeleteAsync(GetCacheKey(userId));
     }
 
     private async Task<List<Note>> GetNotesWithRedisControl(CancellationToken cancellationToken)
     {
+        var currentUserId = GetCurrentUserId();
         try
         {
+            var cacheKey = GetCacheKey(currentUserId);
+
             // First attempt: read from Redis without locking.
-            var cachedNotes = await _redis.StringGetAsync(NotesCacheKey);
+            var cachedNotes = await _redis.StringGetAsync(cacheKey);
 
             if (cachedNotes.HasValue)
             {
@@ -272,18 +297,18 @@ public class NoteService
             try
             {
                 // Another thread may already have populated Redis.
-                cachedNotes = await _redis.StringGetAsync(NotesCacheKey);
+                cachedNotes = await _redis.StringGetAsync(cacheKey);
 
                 if (cachedNotes.HasValue)
                 {
                     return JsonSerializer.Deserialize<List<Note>>((string)cachedNotes!, _jsonOptions) ?? [];
                 }
 
-                var notes = await GetDatabaseRecords(cancellationToken);
+                var notes = await GetDatabaseRecords(currentUserId, cancellationToken);
 
                 var serialized = JsonSerializer.Serialize(notes, _jsonOptions);
 
-                await _redis.StringSetAsync(NotesCacheKey, serialized, CacheExpiration);
+                await _redis.StringSetAsync(cacheKey, serialized, CacheExpiration);
 
                 _logger.LogInformation("Notes loaded from disk and cached in Redis.");
 
@@ -293,14 +318,23 @@ public class NoteService
             {
                 _logger.LogError(ex, "Failed to load notes from Redis. Falling back to disk.");
 
-                return await GetDatabaseRecords(cancellationToken);
+                return await GetDatabaseRecords(currentUserId, cancellationToken);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load notes from Redis. Falling back to disk.");
 
-            return await GetDatabaseRecords(cancellationToken);
+            return await GetDatabaseRecords(currentUserId, cancellationToken);
         }
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var currentUserId = _currentUser.UserId;
+        if (currentUserId == Guid.Empty)
+            throw new UnauthorizedAccessException("Unable to determine current user.");
+
+        return currentUserId;
     }
 }
