@@ -11,6 +11,8 @@ namespace KeepApi.Middleware;
 public class LoggingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<LoggingMiddleware> _logger;
+
     // Varsayılan System.Text.Json encoder'ı ASCII-dışı karakterleri (ş, ı, ğ, ö, ü, ç vb.) \uXXXX olarak escape eder. Loglarda okunabilir Türkçe metin için bunu gevşetiyoruz.
     private static readonly JsonSerializerOptions RedactSerializerOptions = new()
     {
@@ -34,9 +36,10 @@ public class LoggingMiddleware
         "tckn"
     };
 
-    public LoggingMiddleware(RequestDelegate next)
+    public LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task Invoke(HttpContext context)
@@ -73,7 +76,7 @@ public class LoggingMiddleware
         responseBody.Position = 0;
         await responseBody.CopyToAsync(originalBody);
 
-        Log.Information(
+        _logger.LogInformation(
             """
             HTTP Request
             Method: {Method}

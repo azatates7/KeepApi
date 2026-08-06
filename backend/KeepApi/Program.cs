@@ -1,4 +1,5 @@
 using KeepApi.Application.Interfaces;
+using KeepApi.Common;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
@@ -21,7 +22,13 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 builder.Services.AddScoped<NoteService>(); 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters
+            .Add(new TrimStringJsonConverter()); // Trim global çözüm
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -146,10 +153,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<LoggingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseMiddleware<LoggingMiddleware>();
 app.MapControllers();
 
 app.Run();
