@@ -33,7 +33,8 @@ public class LoggingMiddleware
         "refreshToken",
         "code",
         "otp",
-        "tckn"
+        "tckn",
+        "Hesabınızı doğrulamak için kodunuz"
     };
 
     public LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
@@ -62,22 +63,27 @@ public class LoggingMiddleware
         }
 
         var originalBody = context.Response.Body;
-        using var responseBody = new MemoryStream();
+
+        await using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
-        await _next(context);
+        try
+        {
+            await _next(context);
 
-        watch.Stop();
+            watch.Stop();
 
-        responseBody.Position = 0;
-        var response = await new StreamReader(responseBody).ReadToEndAsync();
-        responseBody.Position = 0;
-        await responseBody.CopyToAsync(originalBody);
+            responseBody.Position = 0;
 
-        _logger.LogInformation(
-            """
+            var response = await new StreamReader(responseBody).ReadToEndAsync();
+
+            responseBody.Position = 0;
+            await responseBody.CopyToAsync(originalBody);
+
+            _logger.LogInformation(
+                """
             HTTP Request
             Method: {Method}
             Path: {Path}
@@ -86,12 +92,17 @@ public class LoggingMiddleware
             Request: {Request}
             Response: {Response}
             """,
-            request.Method,
-            request.Path,
-            context.Response.StatusCode,
-            watch.ElapsedMilliseconds,
-            ReformatJson(requestBody),
-            ReformatJson(response));
+                request.Method,
+                request.Path,
+                context.Response.StatusCode,
+                watch.ElapsedMilliseconds,
+                ReformatJson(requestBody),
+                ReformatJson(response));
+        }
+        finally
+        {
+            context.Response.Body = originalBody;
+        }
     }
 
     /// <summary>

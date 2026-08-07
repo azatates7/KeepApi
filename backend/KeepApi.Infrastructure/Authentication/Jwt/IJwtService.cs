@@ -1,6 +1,4 @@
-﻿using System;
-using KeepApi.Data.Entity;
-using System;
+﻿using KeepApi.Data.Entity;
 
 namespace KeepApi.Infrastructure.Authentication.Jwt
 {

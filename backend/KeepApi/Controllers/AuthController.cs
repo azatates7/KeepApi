@@ -136,6 +136,13 @@ namespace KeepApi.Controllers
             return Ok(ApiResponse<UserDto>.Ok(user));
         }
 
+        [HttpGet("test")]
+        [AllowAnonymous]
+        public IActionResult Test()
+        {
+            throw new Exception("Test Exception");
+        }
+
         private Guid? GetCurrentUserId()
         {
             var value = User.FindFirstValue(ClaimTypes.NameIdentifier);

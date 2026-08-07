@@ -11,13 +11,27 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Serilog;
+using Serilog.Events;
 using StackExchange.Redis;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg)); // Debug Serilog errors
+//Log.Logger = new LoggerConfiguration()
+//    .ReadFrom.Configuration(builder.Configuration)
+//    .CreateLogger();
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(evt =>
+            evt.Level == LogEventLevel.Error || evt.Level == LogEventLevel.Fatal)
+        .WriteTo.File(
+            path: "C:\\Logs\\KeepApi\\ErrorLogs\\error-.txt",
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 90,
+            shared: true))
     .CreateLogger();
 
 builder.Host.UseSerilog();

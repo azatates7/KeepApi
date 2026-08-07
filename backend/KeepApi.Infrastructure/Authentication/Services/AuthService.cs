@@ -7,6 +7,7 @@ using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Email;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace KeepApi.Infrastructure.Authentication.Services
@@ -20,19 +21,22 @@ namespace KeepApi.Infrastructure.Authentication.Services
         private readonly JwtSettings _jwtSettings;
         private readonly IPasswordResetCodeStore _resetCodeStore;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             IJwtService jwtService,
             IOptions<JwtSettings> jwtOptions,
             IPasswordResetCodeStore resetCodeStore,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<AuthService> logger)
         {
             _userManager = userManager;
             _jwtService = jwtService;
             _jwtSettings = jwtOptions.Value;
             _resetCodeStore = resetCodeStore;
             _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -96,6 +100,12 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 throw new InvalidOperationException("Şifreler eşleşmiyor.");
             }
 
+            var passwordValidationResult = await CheckPasswordIsValid(request.Password);
+            if (!string.IsNullOrWhiteSpace(passwordValidationResult))
+            {
+                throw new InvalidOperationException(passwordValidationResult);
+            }
+
             var user = new ApplicationUser
             {
                 UserName = request.UserName,
@@ -132,6 +142,41 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 "Bu kaydı siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.");
         }
 
+        private async Task<string> CheckPasswordIsValid(string password)
+        {
+            var resultString = string.Empty;
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                resultString = "Şifre boş olamaz.";
+            }
+            else if (password.Length < 8)
+            {
+                resultString = "Şifre en az 8 karakter olmalıdır.";
+            }
+            else if (password.Length > 30)
+            {
+                resultString = "Şifre en fazla 30 karakter olmalıdır.";
+            }
+            else if (!password.Any(char.IsUpper))
+            {
+                resultString = "Şifre en az bir büyük harf içermelidir.";
+            }
+            else if (!password.Any(char.IsLower))
+            {
+                resultString = "Şifre en az bir küçük harf içermelidir.";
+            }
+            else if (!password.Any(char.IsDigit))
+            {
+                resultString = "Şifre en az bir rakam içermelidir.";
+            }
+            else if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                resultString = "Şifre en az bir özel karakter içermelidir.";
+            }
+
+            return resultString;
+        }
+
         public async Task<UserDto> MeAsync(Guid userId)
         {
             var user = await _userManager.FindByIdAsync(userId.ToString())
@@ -154,10 +199,11 @@ namespace KeepApi.Infrastructure.Authentication.Services
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
 
-            // Kayıtlı olmayan bir e-posta için de sessizce başarılı dönüyoruz;
-            // aksi halde "bu e-posta sistemde var mı yok mu" bilgisini dışarı sızdırırız.
+            // Kayıtlı olmayan bir e-posta için de sessizce başarılı dönüyoruz aksi halde "bu e-posta sistemde var mı yok mu" bilgisini dışarı sızdırırız.
             if (user is null || user.IsDeleted)
             {
+                //throw new InvalidOperationException("Kullanıcı e-posta kayıtlı değil.");
+                _logger.LogError($"Kullanıcı e-posta kayıt değil. {request.Email}");
                 return;
             }
 
@@ -189,6 +235,12 @@ namespace KeepApi.Infrastructure.Authentication.Services
             if (!_resetCodeStore.TryValidateAndConsume(user.Id, request.Code))
             {
                 throw new InvalidOperationException("Kod hatalı veya süresi dolmuş.");
+            }
+
+            var passwordValidationResult = await CheckPasswordIsValid(request.NewPassword);
+            if (!string.IsNullOrWhiteSpace(passwordValidationResult))
+            {
+                throw new InvalidOperationException(passwordValidationResult);
             }
 
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
