@@ -7,6 +7,9 @@ namespace KeepApi.Models.Request.Note
         public string? Title { get; set; }
         public string? Content { get; set; }
         public string Color { get; set; } = "default";
+        public bool Checklist { get; set; }
+        public bool ImageAdded { get; set; }
+        public string? ImageUrl { get; set; }
         public bool Pinned { get; set; }
         public DateTime? PinnedAt { get; set; }
         public bool Archived { get; set; }

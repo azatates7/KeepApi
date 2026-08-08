@@ -98,6 +98,9 @@ public class NoteService
                 Title = request.Title,
                 Content = request.Content,
                 Color = request.Color,
+                Checklist = request.Checklist,
+                ImageAdded = request.ImageAdded,
+                ImageUrl = request.ImageAdded ? request.ImageUrl : null,
                 UserId = currentUserId,
                 CreatedById = currentUserId,
             };
@@ -149,6 +152,21 @@ public class NoteService
             existing.Status = request.Status;
             existing.UpdatedById = currentUserId;
 
+            existing.Checklist = request.Checklist;
+            existing.ImageAdded = request.ImageAdded;
+            existing.ImageUrl = request.ImageUrl;
+
+            if (request.ImageAdded)
+            {
+                existing.ImageAdded = request.ImageAdded;
+                existing.ImageUrl = request.ImageAdded ? (request.ImageUrl ?? existing.ImageUrl) : null;
+            }
+            else if (request.ImageUrl != null)
+            {
+                existing.ImageUrl = request.ImageUrl;
+                existing.ImageAdded = true;
+            }
+
             var result = await _context.SaveChangesAsync(cancellationToken);
 
             await ClearCacheAsync(currentUserId);
@@ -191,6 +209,22 @@ public class NoteService
             _logger.LogError(ex, "Error while deleting note.");
             throw;
         }
+    }
+
+    // Ayrı, açık bir "görseli sil" endpoint'i de eklenebilir — frontend'de tek çağrıyla net semantik sağlar.
+    [HttpDelete("{id}/image")]
+    public async Task<bool> DeleteNoteImage(string id)
+    {
+        var currentUserId = GetCurrentUserId();
+
+        var note = await _context.Notes.FirstOrDefaultAsync(n => n.Id == id && n.UserId == currentUserId);
+        if (note == null) return false;
+
+        note.ImageAdded = false;
+        note.ImageUrl = null;
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> RestoreAsync(string id, CancellationToken cancellationToken)

@@ -24,6 +24,13 @@ namespace KeepApi.Data.Entity
         public bool Archived { get; set; }
         public DateTime? ArchievedAt { get; set; }
 
+        [Column(TypeName = "NUMBER(1)")]
+        public bool Checklist { get; set; }
+
+        [Column(TypeName = "NUMBER(1)")]
+        public bool ImageAdded { get; set; }
+        public string? ImageUrl { get; set; }
+
         public DateTime? ReminderAt { get; set; }
 
         public Guid UserId { get; set; }

@@ -55,8 +55,9 @@ export default function App() {
 
     async function handleCreate(newNote) {
         if (!newNote.title?.trim()) {
-            alert("Başlık boş bırakılamaz.")
-            return
+            // alert("Başlık boş bırakılamaz.")
+            // return
+            newNote.title = newNote.checklist ? 'Yeni Liste' : newNote.image ? 'Yeni Görsel' : 'Yeni Not'
         }
 
         if (!newNote.content?.trim()) {
