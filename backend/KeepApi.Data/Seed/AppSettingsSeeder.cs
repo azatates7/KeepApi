@@ -1,7 +1,7 @@
-﻿// KeepApi.Data/Seed/AppSettingsSeeder.cs
-using KeepApi.Common.Security;
+﻿using KeepApi.Common.Security;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeepApi.Data.Seed
 {
@@ -9,13 +9,14 @@ namespace KeepApi.Data.Seed
     {
         public static async Task SeedAsync(KeepDbContext context, IAppSettingsCrypto crypto)
         {
-            if (context.AppSettings.Any())
-                return; // sadece tablo boşsa çalış
+            var recordCount = await context.AppSettings.CountAsync();
+            if (recordCount > 0) // Sadece tablo boşsa çalış
+                return;
 
             var settings = new List<AppSetting>
             {
+                Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
                 Plain("Cors:AllowedOrigin", "http://localhost:5173", "React frontend url", "KeepApi"),
-
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),
                 Plain("Jwt:Audience", "KeepReact", "JWT audience", "KeepApi"),
                 Plain("Jwt:ExpireMinutes", "60", "JWT token süresi (dk)", "KeepApi"),
@@ -37,7 +38,7 @@ namespace KeepApi.Data.Seed
                 Plain("Smtp:User", "azatates4977@gmail.com", "", "KeepApi"),
                 Secret("Smtp:Password", "palf nwuh qctu mnyz", "Gmail app password", "KeepApi", crypto),
                 Plain("Smtp:From", "azatates4977@gmail.com", "", "KeepApi"),
-                Plain("Smtp:EnableSsl", "true", "", "KeepApi"),
+                Plain("Smtp:EnableSsl", "true", "", "KeepApi")
             };
 
             context.AppSettings.AddRange(settings);

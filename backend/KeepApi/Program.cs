@@ -97,13 +97,6 @@ builder.Services.AddCors(options => // React policy allow
     });
 });
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
-{
-    var connectionString = builder.Configuration["Redis:ConnectionString"]
-        ?? throw new InvalidOperationException("Redis:ConnectionString appsettings.json içinde tanımlı değil.");
-    return ConnectionMultiplexer.Connect(connectionString);
-});
-
 builder.Services.AddKeepData(builder.Configuration);
 
 builder.Services
@@ -153,6 +146,13 @@ builder.Services.AddScoped<IAppSettingsCrypto, AppSettingsCrypto>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
+{
+    var connectionString = builder.Configuration["Redis:ConnectionString"]
+        ?? throw new InvalidOperationException("Redis:ConnectionString tanımlı değil.");
+    return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty));
+});
 
 var app = builder.Build();
 

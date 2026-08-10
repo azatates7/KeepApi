@@ -1,5 +1,4 @@
-﻿// KeepApi.Infrastructure/Configuration/DbSettingsConfigurationProvider.cs
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 

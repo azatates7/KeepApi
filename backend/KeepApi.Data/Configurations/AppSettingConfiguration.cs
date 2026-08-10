@@ -1,5 +1,4 @@
-﻿// KeepApi.Data/Configurations/AppSettingConfiguration.cs
-using KeepApi.Data.Entity;
+﻿using KeepApi.Data.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

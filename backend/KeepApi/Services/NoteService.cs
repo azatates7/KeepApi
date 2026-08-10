@@ -99,7 +99,7 @@ public class NoteService
                 Color = request.Color,
                 Checklist = request.Checklist,
                 ImageAdded = request.ImageAdded,
-                ImageUrl = request.ImageAdded ? request.ImageUrl.Substring(0, 200) : null,
+                ImageUrl = request.ImageAdded ? request.ImageUrl?.Substring(0, 200) : null,
                 UserId = currentUserId,
                 CreatedById = currentUserId,
             };
