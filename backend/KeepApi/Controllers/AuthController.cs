@@ -44,6 +44,30 @@ namespace KeepApi.Controllers
             }
         }
 
+        /// <summary>Google/Microsoft/GitHub ile giriş yapar. Frontend'in provider'dan aldığı
+        /// authorization "code"u ve kullandığı redirect_uri'yi gönderir; JWT döner (login ile aynı yanıt şekli).</summary>
+        /// <param name="provider">"google" | "microsoft" | "github"</param>
+        /// <response code="200">Giriş başarılı, Bearer token döner.</response>
+        /// <response code="401">Sağlayıcı doğrulaması başarısız ya da hesap kullanılamıyor.</response>
+        [HttpPost("external/{provider}")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> ExternalLogin(
+            [FromRoute] string provider,
+            [FromBody] ExternalLoginRequest request)
+        {
+            try
+            {
+                var result = await _authService.ExternalLoginAsync(provider, request);
+                return Ok(ApiResponse<LoginResponse>.Ok(result, "Giriş başarılı."));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Fail(ex.Message));
+            }
+        }
+
         /// <summary>Yeni kullanıcı kaydı oluşturur (varsayılan "User" rolü ile).</summary>
         /// <response code="200">Kayıt başarılı.</response>
         /// <response code="400">Kayıt bilgileri geçersiz.</response>

@@ -6,6 +6,7 @@ import { useReminders } from './components/useReminders.jsx'
 import Trash from './components/Trash.jsx'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
+import OAuthCallback from './components/OAuthCallback.jsx'
 
 export default function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()))
@@ -54,17 +55,22 @@ export default function App() {
     }
 
     async function handleCreate(newNote) {
-        if (!newNote.title?.trim()) {
+        if (!newNote.imageAdded && !newNote.title?.trim()) {
             // alert("Başlık boş bırakılamaz.")
             // return
             newNote.title = newNote.checklist ? 'Yeni Liste' : newNote.image ? 'Yeni Görsel' : 'Yeni Not'
         }
 
-        if (!newNote.content?.trim()) {
-            alert("Not boş bırakılamaz.")
+        if (!newNote.imageAdded && !newNote.content?.trim()) {
+            alert("Not boş bırakılamaz. İmage " + newNote.image + " Content " + newNote)
             return
         }
 
+        // alert(
+        //     "Image Status2: " + newNote.image +
+        //     "\n\nContent:\n" +
+        //     JSON.stringify(newNote, null, 2)
+        // );
         const created = await createNote(newNote)
         setNotes((prev) => [created, ...prev])
     }
@@ -77,7 +83,7 @@ export default function App() {
         }
 
         if ("content" in patch && !patch.content.trim()) {
-            alert("Not boş bırakılamaz.")
+            alert("Not boş bırakılamaz, resim kontrol edilmeliiii.")
             return
         }
 
@@ -103,6 +109,16 @@ export default function App() {
     function handleCloseTrash() {
         setShowTrash(false)
         load();
+    }
+
+    // Google/Microsoft/GitHub bu sayfaya (redirect_uri) geri yönlendirir.
+    if (!isAuthenticated && window.location.pathname === '/oauth/callback') {
+        return (
+            <OAuthCallback
+                onLoginSuccess={handleLoginSuccess}
+                onCancel={() => setAuthView('login')}
+            />
+        )
     }
 
     if (!isAuthenticated) {
@@ -184,7 +200,7 @@ export default function App() {
                     <div className="note-grid">
                         {
                             others.map((note) => (
-                            <NoteCard key={note.id} note={note} onUpdate={handleUpdate} onDelete={handleDelete} />
+                                <NoteCard key={note.id} note={note} onUpdate={handleUpdate} onDelete={handleDelete} />
                             ))
                         }
                     </div>

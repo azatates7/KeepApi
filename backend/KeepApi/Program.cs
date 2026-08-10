@@ -8,7 +8,6 @@ using KeepApi.Infrastructure.Authentication.Services;
 using KeepApi.Middleware;
 using KeepApi.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
@@ -28,7 +27,7 @@ Log.Logger = new LoggerConfiguration()
         .Filter.ByIncludingOnly(evt =>
             evt.Level == LogEventLevel.Error || evt.Level == LogEventLevel.Fatal)
         .WriteTo.File(
-            path: "C:\\Logs\\KeepApi\\ErrorLogs\\error-.txt",
+            path: builder.Configuration["ErrorLogFileName"] ?? throw new Exception("ErrorLogFileName Not Found"),
             rollingInterval: RollingInterval.Day,
             retainedFileCountLimit: 90,
             shared: true))
@@ -96,7 +95,9 @@ builder.Services.AddCors(options => // React policy allow
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 {
-    return ConnectionMultiplexer.Connect("localhost:6379");
+    var connectionString = builder.Configuration["Redis:ConnectionString"]
+        ?? throw new InvalidOperationException("Redis:ConnectionString appsettings.json içinde tanımlı değil.");
+    return ConnectionMultiplexer.Connect(connectionString);
 });
 
 builder.Services.AddKeepData(builder.Configuration);

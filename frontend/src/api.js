@@ -81,6 +81,15 @@ export async function register({ userName, email, password, confirmPassword, fir
     return unwrap(res, 'Kayıt oluşturulamadı.')
 }
 
+export async function externalLogin(provider, code, redirectUri) {
+    const res = await fetch(`${AUTH_BASE_URL}/external/${provider}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, redirectUri }),
+    })
+    return unwrap(res, 'Giriş başarısız.')
+}
+
 export async function verifyEmail(email, code) {
     const res = await fetch(`${AUTH_BASE_URL}/verify-email`, {
         method: 'POST',

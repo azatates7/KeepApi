@@ -3,6 +3,7 @@ using KeepApi.Application.Models.Common.Auth;
 using KeepApi.Application.Models.Request.Auth;
 using KeepApi.Application.Models.Response.Auth;
 using KeepApi.Data.Entity;
+using KeepApi.Infrastructure.Authentication.External;
 using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Email;
@@ -21,6 +22,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
         private readonly JwtSettings _jwtSettings;
         private readonly IPasswordResetCodeStore _resetCodeStore;
         private readonly IEmailService _emailService;
+        private readonly IExternalOAuthClient _externalOAuthClient;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
@@ -29,6 +31,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
             IOptions<JwtSettings> jwtOptions,
             IPasswordResetCodeStore resetCodeStore,
             IEmailService emailService,
+            IExternalOAuthClient externalOAuthClient,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
@@ -36,6 +39,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
             _jwtSettings = jwtOptions.Value;
             _resetCodeStore = resetCodeStore;
             _emailService = emailService;
+            _externalOAuthClient = externalOAuthClient;
             _logger = logger;
         }
 
@@ -83,6 +87,123 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 Token = token,
                 ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes)
             };
+        }
+
+        public async Task<LoginResponse> ExternalLoginAsync(string provider, ExternalLoginRequest request)
+        {
+            var providerKeyNormalized = provider.Trim().ToLowerInvariant();
+
+            ExternalUserInfo externalUser;
+            try
+            {
+                externalUser = await _externalOAuthClient.ExchangeAndGetUserInfoAsync(
+                    providerKeyNormalized, request.Code, request.RedirectUri);
+            }
+            catch (ExternalAuthException ex)
+            {
+                throw new UnauthorizedAccessException(ex.Message);
+            }
+
+            // 1) Daha önce bu sağlayıcı ile giriş yapmış mı? (AspNetUserLogins)
+            var user = await _userManager.FindByLoginAsync(providerKeyNormalized, externalUser.ProviderKey);
+
+            if (user is null)
+            {
+                // 2) Aynı e-posta ile normal kayıtlı bir hesap var mı? Varsa hesabı bu sağlayıcıya bağla.
+                user = await _userManager.FindByEmailAsync(externalUser.Email);
+
+                if (user is not null && user.IsDeleted)
+                {
+                    throw new UnauthorizedAccessException("Bu hesap kullanılamıyor.");
+                }
+
+                if (user is null)
+                {
+                    // 3) Hiç yoksa yeni kullanıcı oluştur. Sağlayıcı e-postayı doğruladıysa
+                    // bizim de tekrar e-posta doğrulaması istememize gerek yok.
+                    user = new ApplicationUser
+                    {
+                        UserName = await GenerateUniqueUserNameAsync(externalUser),
+                        Email = externalUser.Email,
+                        EmailConfirmed = externalUser.EmailVerified,
+                        FirstName = string.IsNullOrWhiteSpace(externalUser.FirstName) ? providerKeyNormalized : externalUser.FirstName,
+                        LastName = externalUser.LastName,
+                        CreatedAt = DateTime.Now,
+                        IsDeleted = false,
+                        Status = 1
+                    };
+
+                    var createResult = await _userManager.CreateAsync(user);
+                    if (!createResult.Succeeded)
+                    {
+                        throw new UnauthorizedAccessException(
+                            string.Join(" ", createResult.Errors.Select(e => e.Description)));
+                    }
+
+                    if (!await _userManager.IsInRoleAsync(user, "User"))
+                    {
+                        await _userManager.AddToRoleAsync(user, "User");
+                    }
+                }
+
+                var addLoginResult = await _userManager.AddLoginAsync(
+                    user,
+                    new UserLoginInfo(providerKeyNormalized, externalUser.ProviderKey, provider));
+
+                if (!addLoginResult.Succeeded)
+                {
+                    throw new UnauthorizedAccessException(
+                        string.Join(" ", addLoginResult.Errors.Select(e => e.Description)));
+                }
+            }
+
+            if (user.IsDeleted)
+            {
+                throw new UnauthorizedAccessException("Bu hesap kullanılamıyor.");
+            }
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                throw new UnauthorizedAccessException("Hesap kilitli. Lütfen daha sonra tekrar deneyin.");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = await _jwtService.GenerateTokenAsync(user);
+
+            return new LoginResponse
+            {
+                UserId = user.Id,
+                UserName = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                Roles = roles,
+                Token = token,
+                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes)
+            };
+        }
+
+        private async Task<string> GenerateUniqueUserNameAsync(ExternalUserInfo externalUser)
+        {
+            var baseName = externalUser.Email.Contains('@')
+                ? externalUser.Email[..externalUser.Email.IndexOf('@')]
+                : $"{externalUser.FirstName}{externalUser.LastName}";
+
+            baseName = new string(baseName.Where(char.IsLetterOrDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(baseName))
+            {
+                baseName = "user";
+            }
+
+            var candidate = baseName;
+            var suffix = 0;
+
+            while (await _userManager.FindByNameAsync(candidate) is not null)
+            {
+                suffix++;
+                candidate = $"{baseName}{suffix}";
+            }
+
+            return candidate;
         }
 
         public async Task RegisterAsync(RegisterRequest request)

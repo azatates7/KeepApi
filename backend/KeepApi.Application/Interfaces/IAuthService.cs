@@ -8,6 +8,10 @@ namespace KeepApi.Application.Interfaces
     {
         Task<LoginResponse> LoginAsync(LoginRequest request);
 
+        /// <summary>Google/Microsoft/GitHub authorization code'unu doğrulayıp eşleşen (veya yeni oluşturulan) kullanıcı için JWT döner.</summary>
+        
+        Task<LoginResponse> ExternalLoginAsync(string provider, ExternalLoginRequest request);
+
         Task RegisterAsync(RegisterRequest request);
 
         Task<UserDto> MeAsync(Guid userId);

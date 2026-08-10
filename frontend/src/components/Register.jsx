@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { register, verifyEmail } from '../api.js'
 import AuthLayout from './AuthLayout.jsx'
+import SocialLoginButtons from './SocialLoginButtons.jsx'
 
 export default function Register({ onNavigateLogin }) {
     // 'form' | 'verify'
@@ -160,6 +161,8 @@ export default function Register({ onNavigateLogin }) {
                             Giriş Yap
                         </button>
                     </p>
+
+                    <SocialLoginButtons action="register" />
                 </>
             )}
 

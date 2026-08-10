@@ -87,7 +87,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
             title = checklist ? 'Yeni Liste' : image ? 'Yeni Görsel' : 'Yeni Not'
         }
         if (!hasImage && !content.trim()) {
-            setError("Not boş bırakılamaz.")
+            setError("Not boş bırakılamaz, check hasImage.")
             return
         }
         setError("")

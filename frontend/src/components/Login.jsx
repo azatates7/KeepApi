@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { login, forgotPassword, resetPassword, setToken } from '../api.js'
 import AuthLayout from './AuthLayout.jsx'
+import SocialLoginButtons from './SocialLoginButtons.jsx'
 
 const REMEMBERED_USERNAME_KEY = 'keep_todo_remembered_username'
 const REMEMBER_ME_KEY = 'keep_todo_remember_me'
@@ -197,6 +198,8 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                             Kayıt Ol
                         </button>
                     </p>
+
+                    <SocialLoginButtons action="login" />
                 </>
             )}
 

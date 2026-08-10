@@ -232,20 +232,20 @@
 }
 
 .auth-submit {
-  margin-top: 4px;
-  background: #ee6c24;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 11px 16px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
+    margin-top: 4px;
+    background: #ee6c24;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
 }
 
     .auth-submit:hover {
-      background: #d95c18;
+        background: #d95c18;
     }
 
     .auth-submit:disabled {
@@ -276,3 +276,60 @@
     font-size: 13px;
     color: var(--ink-soft);
 }
+
+/* ---- social login (Google/Microsoft/GitHub) ---- */
+
+.social-login {
+    margin-top: 22px;
+}
+
+.social-login-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-family: var(--font-mono);
+}
+
+    .social-login-divider::before,
+    .social-login-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+
+.social-login-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.social-login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: var(--paper-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+    .social-login-button:hover {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+    }
+
+    .social-login-button svg {
+        flex: none;
+    }

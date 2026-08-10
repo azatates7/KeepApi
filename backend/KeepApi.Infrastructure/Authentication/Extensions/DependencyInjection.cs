@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using KeepApi.Application.Interfaces;
+using KeepApi.Infrastructure.Authentication.External;
 using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Authentication.Services;
@@ -29,9 +30,16 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
             services.Configure<SmtpSettings>(
                 configuration.GetSection(SmtpSettings.SectionName));
 
+            services.Configure<ExternalProvidersSettings>(
+                configuration.GetSection(ExternalProvidersSettings.SectionName));
+
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, SmtpEmailService>();
+
+            // Google/Microsoft/GitHub authorization code'unu değiştirip
+            // sağlayıcının kullanıcı bilgisi uç noktasını çağırmak için.
+            services.AddHttpClient<IExternalOAuthClient, ExternalOAuthClient>();
 
             // Şifre sıfırlama kodları kısa ömürlü (10 dk) olduğu için tek instance'lık
             // bellek içi depo yeterli; birden fazla API instance'ı (load balancer arkasında)

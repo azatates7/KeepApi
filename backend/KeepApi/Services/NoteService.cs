@@ -2,7 +2,6 @@ using KeepApi.Application.Interfaces;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Models.Request.Note;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
@@ -86,7 +85,7 @@ public class NoteService
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request?.Title) || string.IsNullOrWhiteSpace(request?.Content))
+            if (!request.ImageAdded && string.IsNullOrWhiteSpace(request?.Content))
             {
                 throw new Exception("Not title veya içerik boş olamaz.");
             }
@@ -100,7 +99,7 @@ public class NoteService
                 Color = request.Color,
                 Checklist = request.Checklist,
                 ImageAdded = request.ImageAdded,
-                ImageUrl = request.ImageAdded ? request.ImageUrl : null,
+                ImageUrl = request.ImageAdded ? request.ImageUrl.Substring(0, 200) : null,
                 UserId = currentUserId,
                 CreatedById = currentUserId,
             };
@@ -129,7 +128,7 @@ public class NoteService
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request?.Title) || string.IsNullOrWhiteSpace(request?.Content))
+            if (!request.ImageAdded && string.IsNullOrWhiteSpace(request?.Content))
             {
                 throw new Exception("Not title veya içerik boş olamaz.");
             }

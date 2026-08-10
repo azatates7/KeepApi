@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-using Serilog;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
