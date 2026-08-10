@@ -2,13 +2,10 @@
 using KeepApi.Data.Entity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Drawing;
-using System.Net.NetworkInformation;
-using System.Reflection.Metadata;
 
-namespace KeepApi.Data.Extensions;
+namespace KeepApi.Data.Seed;
 
-public static class DatabaseSeeder
+public static class UserSeeder
 {
     public static async Task SeedAsync(
         KeepDbContext context,

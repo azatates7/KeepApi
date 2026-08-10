@@ -1,12 +1,16 @@
 using KeepApi.Application.Interfaces;
 using KeepApi.Common;
+using KeepApi.Common.Security;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
+using KeepApi.Data.Seed;
 using KeepApi.Infrastructure.Authentication.Extensions;
 using KeepApi.Infrastructure.Authentication.Services;
+using KeepApi.Infrastructure.Configuration;
 using KeepApi.Middleware;
 using KeepApi.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
 using Serilog;
@@ -126,6 +130,24 @@ builder.Services
 .AddEntityFrameworkStores<KeepDbContext>()
 .AddDefaultTokenProviders();
 
+// --- DB'den ayarları yükle (bootstrap aşaması, DI container henüz yok) ---
+var bootstrapConnectionString = builder.Configuration.GetConnectionString("OracleConnection")
+    ?? throw new InvalidOperationException("OracleConnection appsettings.json içinde tanımlı olmalı.");
+
+var keyRingPath = builder.Configuration["DataProtection:KeyPath"] ?? @"C:\dp-keys";
+var bootstrapProtectionProvider = DataProtectionProvider.Create(
+    new DirectoryInfo(keyRingPath),
+    opts => opts.SetApplicationName("KeepApi"));
+
+IConfigurationBuilder configBuilder = builder.Configuration;
+configBuilder.Add(new DbSettingsConfigurationSource(bootstrapConnectionString, "KeepApi", bootstrapProtectionProvider));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
+    .SetApplicationName("KeepApi"); // bootstrap ile AYNI path + app name olmalı, aksi halde Unprotect patlar
+
+builder.Services.AddScoped<IAppSettingsCrypto, AppSettingsCrypto>();
+
 // JWT Bearer authentication, authorization) KeepApi.Infrastructure katmanında kurulu.
 // AddIdentity'den Sonra çağrılmalı; aksi halde Identity'nin varsayılan cookie şemasını geçersiz kılmaz.
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -148,14 +170,19 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<KeepDbContext>();
+        var context = 
+            services.GetRequiredService<KeepDbContext>();
+
         var userManager =
             services.GetRequiredService<UserManager<ApplicationUser>>();
 
         var roleManager =
             services.GetRequiredService<RoleManager<ApplicationRole>>();
 
-        await DatabaseSeeder.SeedAsync(
+        var crypto = services.GetRequiredService<IAppSettingsCrypto>();
+        await AppSettingsSeeder.SeedAsync(context, crypto);
+
+        await UserSeeder.SeedAsync(
             context,
             userManager,
             roleManager);

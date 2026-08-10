@@ -15,7 +15,10 @@ namespace KeepApi.Data.Context
             : base(options)
         {
         }
+
         public DbSet<Note> Notes { get; set; }
+        public DbSet<AppSetting> AppSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(KeepDbContext).Assembly);
