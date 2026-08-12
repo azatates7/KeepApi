@@ -377,3 +377,8 @@ FodyWeavers.xsd
 
 # VS Code
 .vscode/
+/backend/KeepApi.Infrastructure/obj/Debug/net10.0/KeepApi.Infrastructure.AssemblyInfo.cs
+/backend/KeepApi.Infrastructure/obj/Debug/net10.0/KeepApi.Infrastructure.AssemblyInfoInputs.cache
+/backend/KeepApi.Infrastructure/KeepApi.Infrastructure.csproj
+/backend/KeepApi.Application/obj/Debug/net10.0/KeepApi.Application.AssemblyInfo.cs
+/backend/KeepApi.Application/obj/Debug/net10.0/KeepApi.Application.AssemblyInfoInputs.cache
