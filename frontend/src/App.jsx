@@ -15,7 +15,7 @@ import { useReminders } from './components/useReminders.jsx'
 import Trash from './components/Trash.jsx'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
-import OAuthCallback from './components/OAuthCallback.jsx'
+import OAuthCallBack from './components/OAuthCallBack.jsx'
 
 export default function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()))
@@ -219,7 +219,7 @@ export default function App() {
     // Google/Microsoft/GitHub bu sayfaya (redirect_uri) geri yönlendirir.
     if (!isAuthenticated && window.location.pathname === '/oauth/callback') {
         return (
-            <OAuthCallback
+            <OAuthCallBack
                 onLoginSuccess={handleLoginSuccess}
                 onCancel={() => setAuthView('login')}
             />

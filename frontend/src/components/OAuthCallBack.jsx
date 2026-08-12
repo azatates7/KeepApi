@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { externalLogin, setToken } from '../api.js'
-import { consumeOAuthState, getRedirectUri } from '../oauthConfig.jsx'
+import { consumeOAuthState, getRedirectUri } from '../OAuthConfig.jsx'
 import AuthLayout from './AuthLayout.jsx'
 
 // Google/Microsoft/GitHub'ın kullanıcıyı geri yönlendirdiği sayfa.
 // URL: /oauth/callback?code=...&state=...  (veya hata durumunda ?error=...)
-export default function OAuthCallback({ onLoginSuccess, onCancel }) {
+export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
     const [status, setStatus] = useState('processing') // 'processing' | 'error'
     const [error, setError] = useState(null)
     const ranOnce = useRef(false)

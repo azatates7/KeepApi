@@ -1,4 +1,4 @@
-import { startOAuthLogin } from '../oauthConfig.jsx'
+import { startOAuthLogin } from '../OAuthConfig.jsx'
 
 const ICONS = {
     google: (

@@ -47,7 +47,7 @@ function randomNonce() {
 
 // Kullanıcıyı sağlayıcının yetkilendirme (authorize) sayfasına yönlendirir.
 // state = "<provider>:<nonce>" olarak kodlanır; nonce sessionStorage'a yazılır ve
-// dönüşte (OAuthCallback.jsx) CSRF koruması için karşılaştırılır.
+// dönüşte (OAuthCallBack.jsx) CSRF koruması için karşılaştırılır.
 export function startOAuthLogin(provider) {
     const config = OAUTH_PROVIDERS[provider]
     if (!config) {
@@ -77,7 +77,7 @@ export function startOAuthLogin(provider) {
     window.location.href = `${config.authorizeUrl}?${params.toString()}`
 }
 
-// OAuthCallback.jsx tarafından çağrılır: URL'deki state ile sessionStorage'daki
+// OAuthCallBack.jsx tarafından çağrılır: URL'deki state ile sessionStorage'daki
 // beklenen state'i karşılaştırır, eşleşirse provider adını döner.
 export function consumeOAuthState(stateFromUrl) {
     const expected = sessionStorage.getItem(STATE_STORAGE_KEY)
