@@ -138,6 +138,18 @@ export async function fetchNotes() {
     return res.json()
 }
 
+// Arama ekranı için aktif, arşivlenmiş, sabitlenmiş ve çöp kutusundaki
+// kayıtları birlikte getirir. Kalıcı olarak silinen (Status = 0) kayıtlar dönmez.
+export async function fetchSearchNotes() {
+    const res = await apiFetch(`${NOTES_BASE_URL}/search`)
+
+    if (!res.ok) {
+        throw new Error('Arama kayıtları yüklenemedi')
+    }
+
+    return res.json()
+}
+
 export async function createNote(note) {
     const res = await apiFetch(NOTES_BASE_URL, {
         method: 'POST',

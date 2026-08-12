@@ -1,14 +1,26 @@
 import { useEffect, useState } from "react";
 import { fetchTrash, restoreNote, deleteForever } from "../api";
+import TrashCard from "./TrashCard.jsx";
 import "./Trash.css";
 
-export default function Trash({ onBack }) {
-
+export default function Trash() {
     const [notes, setNotes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     async function load() {
-        const result = await fetchTrash();
-        setNotes(result);
+        try {
+            setLoading(true);
+
+            const result = await fetchTrash();
+
+            setNotes(result);
+            setError(null);
+        } catch (err) {
+            setError(err.message || "Çöp kutusu yüklenemedi.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
@@ -16,90 +28,79 @@ export default function Trash({ onBack }) {
     }, []);
 
     async function restore(id) {
-        await restoreNote(id);
-        load();
+        try {
+            await restoreNote(id);
+            await load();
+        } catch (err) {
+            setError(err.message || "Not geri yüklenemedi.");
+        }
     }
 
     async function remove(id) {
-
-        if (!window.confirm("Not kalıcı olarak silinsin mi?"))
+        if (!window.confirm("Not kalıcı olarak silinsin mi?")) {
             return;
+        }
 
-        await deleteForever(id);
-
-        load();
+        try {
+            await deleteForever(id);
+            await load();
+        } catch (err) {
+            setError(err.message || "Not kalıcı olarak silinemedi.");
+        }
     }
 
     return (
-        <div className="trash-page">
+        <main className="trash-page">
 
-            <header className="trash-header">
+            <div className="trash-toolbar">
+                <div className="trash-heading">
+                    <h1>Çöp Kutusu</h1>
 
-                <button
-                    className="back-button"
-                    onClick={onBack}
-                >
-                    ← Notlara Dön
-                </button>
-
-                <div className="trash-title">
-                    <h1>🗑 Çöp Kutusu</h1>
-                    <span>{notes.length} not</span>
+                    {!loading && (
+                        <span>
+                            {notes.length} not
+                        </span>
+                    )}
                 </div>
-
-            </header>
-
-            {
-                notes.length === 0 && (
-                    <div className="empty-trash">
-                        Çöp kutusu boş.
-                    </div>
-                )
-            }
-
-            <div className="trash-list">
-
-                {
-                    notes.map(note => (
-
-                        <article
-                            key={note.id}
-                            className="trash-card"
-                        >
-
-                            <div className="trash-content">
-
-                                <h3>{note.title || "Başlıksız Not"}</h3>
-
-                                <p>{note.content}</p>
-
-                            </div>
-
-                            <footer className="trash-footer">
-
-                                <button
-                                    className="restore-btn"
-                                    onClick={() => restore(note.id)}
-                                >
-                                    ↩ Geri Yükle
-                                </button>
-
-                                <button
-                                    className="delete-btn"
-                                    onClick={() => remove(note.id)}
-                                >
-                                    🗑 Kalıcı Sil
-                                </button>
-
-                            </footer>
-
-                        </article>
-
-                    ))
-                }
-
             </div>
 
-        </div>
+            {loading && (
+                <p className="status">
+                    Yükleniyor…
+                </p>
+            )}
+
+            {error && (
+                <p className="status error">
+                    {error}
+                </p>
+            )}
+
+            {!loading && !error && notes.length === 0 && (
+                <p className="empty-state">
+                    Çöp kutusu boş.
+                </p>
+            )}
+
+            {!loading && notes.length > 0 && (
+                <section className="note-section">
+
+                    <div className="note-grid">
+
+                        {notes.map((note) => (
+                            <TrashCard
+                                key={note.id}
+                                note={note}
+                                onRestore={restore}
+                                onDelete={remove}
+                            />
+                        ))}
+
+                    </div>
+
+                </section>
+            )}
+
+        </main>
     );
 }

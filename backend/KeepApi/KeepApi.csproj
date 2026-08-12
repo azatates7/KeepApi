@@ -37,6 +37,9 @@
     <Folder Include="Models\Response\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="appsettings.Production.json" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\KeepApi.Application\KeepApi.Application.csproj" />
     <ProjectReference Include="..\KeepApi.Common\KeepApi.Common.csproj" />
     <ProjectReference Include="..\KeepApi.Data\KeepApi.Data.csproj" />

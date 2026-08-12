@@ -1,0 +1,63 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: keepapi-oracle
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-oRaclePassWord43}
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    container_name: keepapi-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: keepapi-backend
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__OracleConnection: "User Id=SYSTEM;Password=${ORACLE_PASSWORD:-oRaclePassWord43};Data Source=oracle-db:1521/XEPDB1"
+      Redis__ConnectionString: "redis:6379"
+      Cors__AllowedOrigin: "http://localhost:5173"
+    volumes:
+      - dp-keys:/app/dp-keys
+      - backend-logs:/app/logs
+    ports:
+      - "5080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: keepapi-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  oracle-data:
+  dp-keys:
+  backend-logs:

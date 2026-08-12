@@ -12,6 +12,7 @@ using KeepApi.Middleware;
 using KeepApi.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
@@ -151,7 +152,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 {
     var connectionString = builder.Configuration["Redis:ConnectionString"]
         ?? throw new InvalidOperationException("Redis:ConnectionString tanımlı değil.");
-    return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty));
+    return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty)); // Burada hata alınırsa Redis aktifleştirilmeli
 });
 
 var app = builder.Build();
@@ -172,6 +173,8 @@ using (var scope = app.Services.CreateScope())
     {
         var context = 
             services.GetRequiredService<KeepDbContext>();
+
+        await context.Database.MigrateAsync(); // Seeder'lardan önce şema oluşturulmalı
 
         var userManager =
             services.GetRequiredService<UserManager<ApplicationUser>>();

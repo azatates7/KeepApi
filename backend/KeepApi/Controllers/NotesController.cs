@@ -59,6 +59,17 @@ namespace KeepApi.Controllers
             return note is null ? NotFound() : Ok(note);
         }
 
+        /// <summary>
+        /// Arama ekranı için aktif, sabitlenmiş, arşivlenmiş ve çöp kutusundaki tüm kayıtları döndürür. Kalıcı olarak silinenler gösterilmez.
+        /// </summary>
+        [HttpGet("search")]
+        [ProducesResponseType(typeof(List<Note>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<Note>>> SearchRecords(
+            CancellationToken cancellationToken = default)
+        {
+            return Ok(await _noteService.GetSearchableAsync(cancellationToken));
+        }
+
         /// <summary>Yeni bir not oluşturur.</summary>
         /// <param name="note">Oluşturulacak notun içeriği (id/createdAt gönderilse de yok sayılır, sunucu üretir).</param>
         /// <response code="201">Not oluşturuldu, Location header'ı yeni kaydın adresini gösterir.</response>

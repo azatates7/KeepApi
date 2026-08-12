@@ -61,6 +61,24 @@ public class NoteService
         return results;
     }
 
+    /// <summary>
+    /// Search ekranı için kullanıcının tüm görünür kayıtlarını döndürür.
+    /// Aktif, sabitlenmiş, arşivlenmiş ve çöp kutusundaki kayıtlar dahildir.
+    /// Kalıcı olarak silinen kayıtlar (Status = 0) hariç tutulur.
+    /// </summary>
+    public async Task<List<Note>> GetSearchableAsync(CancellationToken cancellationToken)
+    {
+        var results = await GetNotesWithRedisControl(cancellationToken);
+
+        _logger.LogInformation(
+            "Search records loaded. Total: {TotalCount}",
+            results.Count(x => x.Status == 1));
+
+        return results
+            .Where(x => x.Status == 1)
+            .ToList();
+    }
+
     public async Task<List<Note>> GetDeletedAsync(CancellationToken cancellationToken)
     {
         var results = await GetNotesWithRedisControl(cancellationToken);

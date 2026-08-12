@@ -83,17 +83,27 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
     }
 
     function commitEdit() {
-        if (!hasImage && !title.trim()) {
-            title = checklist ? 'Yeni Liste' : image ? 'Yeni Görsel' : 'Yeni Not'
+        let finalTitle = title // title const olduğu için farklı bir değişken kullanıldı 
+
+        if (!hasImage && !finalTitle.trim()) {
+            finalTitle = isChecklist
+                ? 'Yeni Liste'
+                : 'Yeni Not'
         }
+
         if (!hasImage && !content.trim()) {
-            setError("Not boş bırakılamaz, check hasImage.")
+            setError("Not boş bırakılamaz.")
             return
         }
+
         setError("")
         setEditing(false)
-        if (title !== note.title || content !== note.content) {
-            onUpdate(note.id, { title, content })
+
+        if (finalTitle !== note.title || content !== note.content) {
+            onUpdate(note.id, {
+                title: finalTitle,
+                content
+            })
         }
     }
 

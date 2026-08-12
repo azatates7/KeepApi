@@ -73,16 +73,3 @@ Not şeması:
   "updatedAt": "2026-07-18T00:00:00Z"
 }
 ```
-
-## Notlar
-
-- **DB yok**: `NoteStore.cs` her okuma/yazmada `Data/notes.json` dosyasını
-  `SemaphoreSlim` ile kilitleyip tam dosyayı okuyup geri yazıyor — küçük
-  ölçekli kişisel kullanım için yeterli, çoklu eşzamanlı yazıcı olan
-  production senaryosu için uygun değil (o noktada gerçek bir DB'ye geçmek
-  gerekir).
-- **React 19 özellikleri**: `Composer.jsx` içinde form gönderimi
-  `useActionState` ile yönetiliyor (pending/error state'i manuel
-  `useState` yerine hook'tan geliyor).
-- Sonraki adım olarak Docker Compose ile ikisini tek komutla ayağa
-  kaldırmak istersen haber ver, onu da ekleyebilirim.
