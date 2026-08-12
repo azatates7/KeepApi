@@ -224,9 +224,31 @@ export default function Composer({ onCreate }) {
                         title="Onay kutulu not"
                         aria-label="Onay kutulu not"
                     >
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-                            <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.4" />
-                        </svg>
+                        <svg
+                                viewBox="0 0 24 24"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                aria-hidden="true"
+                            >
+                                <rect
+                                    x="4"
+                                    y="4"
+                                    width="16"
+                                    height="16"
+                                    rx="1.5"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                />
+
+                                <path
+                                    d="M7.5 12.2L10.5 15.2L16.5 8.8"
+                                    stroke="currentColor"
+                                    strokeWidth="1.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
                     </button>
                     <button
                         type="button"

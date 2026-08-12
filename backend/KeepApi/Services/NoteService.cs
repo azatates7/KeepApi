@@ -103,7 +103,9 @@ public class NoteService
     {
         try
         {
-            if (!request.ImageAdded && string.IsNullOrWhiteSpace(request?.Content))
+            if (!request.ImageAdded &&
+                !request.Checklist &&
+                string.IsNullOrWhiteSpace(request?.Content))
             {
                 throw new Exception("Not title veya içerik boş olamaz.");
             }

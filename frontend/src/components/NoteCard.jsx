@@ -91,7 +91,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                 : 'Yeni Not'
         }
 
-        if (!hasImage && !content.trim()) {
+        if (!hasImage && !isChecklist && !content.trim()) {
             setError("Not boş bırakılamaz.")
             return
         }
@@ -222,14 +222,41 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                     onChange={(e) => updateItemText(line.key, e.target.value)}
                                     placeholder="Liste öğesi"
                                 />
-                                <button
+                                {
+                                    <button
                                     type="button"
                                     className="checklist-delete"
                                     onClick={() => deleteItem(line.key)}
-                                    aria-label="Öğeyi sil"
-                                    title="Öğeyi sil"
+                                    aria-label="Liste öğesini sil"
+                                    title="Liste öğesini sil"
                                 >
-                                    ×
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        width="18"
+                                        height="18"
+                                        fill="none"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            d="M5 7H19"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            d="M9 7V5.5C9 4.67 9.67 4 10.5 4H13.5C14.33 4 15 4.67 15 5.5V7"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            d="M7 7L7.7 19C7.76 20.13 8.7 21 9.83 21H14.17C15.3 21 16.24 20.13 16.3 19L17 7"
+                                            stroke="currentColor"
+                                            strokeWidth="1.6"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
                                 </button>
                             </li>
                         ))}

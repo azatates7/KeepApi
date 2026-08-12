@@ -659,13 +659,27 @@ button {
     padding: 2px 4px;
 }
 
-.checklist-item:hover .checklist-delete {
+.checklist-delete {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    cursor: pointer;
     opacity: 1;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.checklist-delete:hover {
-    color: var(--danger);
-}
+    .checklist-delete:hover {
+        background-color: rgba(95, 99, 104, 0.12);
+        color: var(--ink);
+    }
 
 .checklist-add-row {
     display: flex;

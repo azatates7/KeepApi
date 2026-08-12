@@ -132,7 +132,11 @@ export default function App() {
             return
         }
 
-        if ('content' in patch && !patch.content.trim()) {
+        if (
+            'content' in patch &&
+            !patch.content.trim() &&
+            !current?.checklist
+        ) {
             alert('Not boş bırakılamaz.')
             return
         }
