@@ -8,12 +8,15 @@ using KeepApi.Data.Seed;
 using KeepApi.Infrastructure.Authentication.Extensions;
 using KeepApi.Infrastructure.Authentication.Services;
 using KeepApi.Infrastructure.Configuration;
+using KeepApi.Infrastructure.Llm;
+using KeepApi.Jobs;
 using KeepApi.Middleware;
 using KeepApi.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
+using Quartz;
 using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
@@ -154,6 +157,21 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
         ?? throw new InvalidOperationException("Redis:ConnectionString tanımlı değil.");
     return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty)); // Burada hata alınırsa Redis aktifleştirilmeli
 });
+
+builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
+builder.Services.AddScoped<DailySummaryService>();
+
+builder.Services.AddQuartz(q =>
+{
+    var jobKey = new JobKey("DailySummaryJob");
+    q.AddJob<DailySummaryJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("DailySummaryJob-trigger")
+        .WithCronSchedule("0 0 8 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"))));
+    // Linux container'da "Turkey Standard Time" bulunamazsa "Europe/Istanbul" kullanın
+});
+builder.Services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);
 
 var app = builder.Build();
 

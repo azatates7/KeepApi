@@ -3,6 +3,7 @@ using System;
 using KeepApi.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace KeepApi.Data.Migrations
 {
     [DbContext(typeof(KeepDbContext))]
-    partial class KeepDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260813062628_Add_AddIsDailySummaryToNotes_Table")]
+    partial class Add_AddIsDailySummaryToNotes_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,29 +180,6 @@ namespace KeepApi.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("KeepApi.Data.Entity.DailySummaryHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("RAW(16)");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("NCLOB");
-
-                    b.Property<DateTime>("GeneratedAt")
-                        .HasColumnType("TIMESTAMP(7)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("RAW(16)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "GeneratedAt");
-
-                    b.ToTable("DAILY_SUMMARY_HISTORIES", (string)null);
-                });
-
             modelBuilder.Entity("KeepApi.Data.Entity.Note", b =>
                 {
                     b.Property<string>("Id")
@@ -244,9 +224,8 @@ namespace KeepApi.Data.Migrations
                     b.Property<string>("ImageUrl")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<int>("IsDailySummary")
-                        .HasColumnType("NUMBER(1)")
-                        .HasColumnName("IS_DAILY_SUMMARY");
+                    b.Property<bool>("IsDailySummary")
+                        .HasColumnType("NUMBER(1)");
 
                     b.Property<int>("IsDeleted")
                         .HasColumnType("NUMBER(1)")
@@ -396,17 +375,6 @@ namespace KeepApi.Data.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("APP_USER_TOKENS", (string)null);
-                });
-
-            modelBuilder.Entity("KeepApi.Data.Entity.DailySummaryHistory", b =>
-                {
-                    b.HasOne("KeepApi.Data.Entity.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("KeepApi.Data.Entity.Note", b =>

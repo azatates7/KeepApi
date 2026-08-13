@@ -15,6 +15,11 @@ namespace KeepApi.Data.Seed
 
             var settings = new List<AppSetting>
             {
+                Plain("Llm:Provider", "gemini", "", "KeepApi"),
+                Plain("Llm:Model", "gemini-2.5-flash", "", "KeepApi"),
+                Plain("Llm:BaseUrl", "https://generativelanguage.googleapis.com/v1beta/models", "", "KeepApi"),
+                Secret("Llm:ApiKey", "AQ.Ab8RN6JjnK_QtxuedMdAr-UBh7WT8nlNiRh2Yx11O1PpU7mXbA", "LLM API key", "KeepApi", crypto),
+
                 Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
                 Plain("Cors:AllowedOrigin", "http://localhost:5173", "React frontend url", "KeepApi"),
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),

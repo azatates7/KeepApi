@@ -1,4 +1,5 @@
-﻿using KeepApi.Data.Entity;
+﻿using KeepApi.Common.Models;
+using KeepApi.Data.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 

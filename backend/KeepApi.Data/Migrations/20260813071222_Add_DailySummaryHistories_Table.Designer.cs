@@ -3,6 +3,7 @@ using System;
 using KeepApi.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace KeepApi.Data.Migrations
 {
     [DbContext(typeof(KeepDbContext))]
-    partial class KeepDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260813071222_Add_DailySummaryHistories_Table")]
+    partial class Add_DailySummaryHistories_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -244,9 +247,8 @@ namespace KeepApi.Data.Migrations
                     b.Property<string>("ImageUrl")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<int>("IsDailySummary")
-                        .HasColumnType("NUMBER(1)")
-                        .HasColumnName("IS_DAILY_SUMMARY");
+                    b.Property<bool>("IsDailySummary")
+                        .HasColumnType("NUMBER(1)");
 
                     b.Property<int>("IsDeleted")
                         .HasColumnType("NUMBER(1)")

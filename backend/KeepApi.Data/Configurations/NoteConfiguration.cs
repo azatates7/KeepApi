@@ -30,12 +30,12 @@ namespace KeepApi.Data.Configurations
                 .HasDefaultValue("default");
 
             builder.Property(x => x.Pinned)
-                .HasColumnName("PINNED")
-                .HasConversion<int>();//For Oracle
+                .HasColumnName("PINNED");
+                //.HasConversion<int>();//For Oracle
 
             builder.Property(x => x.Archived)
-                .HasColumnName("ARCHIVED")
-                .HasConversion<int>();//For Oracle
+                .HasColumnName("ARCHIVED");
+                //.HasConversion<int>();//For Oracle
 
             builder.Property(x => x.CreatedAt)
                 .HasColumnName("CREATED_AT");
@@ -53,11 +53,25 @@ namespace KeepApi.Data.Configurations
                 .HasColumnName("ARCHIEVED_AT");
 
             builder.Property(x => x.Status)
-                .HasColumnName("STATUS");
+                .HasColumnName("STATUS")
+                .HasColumnType("NUMBER(10)");
+                //.HasConversion<int>();
 
             builder.Property(x => x.IsDeleted)
-                .HasColumnName("IS_DELETED")
-                .HasConversion<int>();//For Oracle
+                .HasColumnName("IS_DELETED");
+                //.HasConversion<int>();//For Oracle
+
+            builder.Property(x => x.Checklist)
+                .HasColumnName("Checklist");
+            //.HasConversion<int>();
+
+            builder.Property(x => x.ImageAdded)
+                .HasColumnName("ImageAdded");
+            //.HasConversion<int>();
+
+            builder.Property(x => x.IsDailySummary)
+                .HasColumnName("IS_DAILY_SUMMARY");
+                //.HasConversion<int>();//For Oracle
         }
     }
 }

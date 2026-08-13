@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KeepApi.Common.Models;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KeepApi.Data.Entity
@@ -20,6 +21,10 @@ namespace KeepApi.Data.Entity
 
         [Column(TypeName = "NUMBER(1)")]
         public bool Archived { get; set; }
+
+        [Column(TypeName = "NUMBER(1)")]
+        public bool IsDailySummary { get; set; }
+
         public DateTime? ArchievedAt { get; set; }
 
         [Column(TypeName = "NUMBER(1)")]

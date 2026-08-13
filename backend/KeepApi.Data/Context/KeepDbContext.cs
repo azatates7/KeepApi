@@ -18,6 +18,7 @@ namespace KeepApi.Data.Context
 
         public DbSet<Note> Notes { get; set; }
         public DbSet<AppSetting> AppSettings { get; set; }
+        public DbSet<DailySummaryHistory> DailySummaryHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -28,9 +29,15 @@ namespace KeepApi.Data.Context
             {
                 foreach (var property in entityType.GetProperties())
                 {
-                    if (property.ClrType == typeof(bool))
+                    if (property.ClrType == typeof(bool) && property.GetValueConverter() is null)
                     {
-                        property.SetColumnType("NUMBER(1)");
+                        property.SetColumnType("NUMBER(1)");   // converter satırını sil
+                    }
+                    else if (property.ClrType == typeof(int) && property.GetValueConverter() is null)
+                    {
+                        property.SetValueConverter(
+                            new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<int, long>(
+                                v => v, v => (int)v));
                     }
                 }
             }

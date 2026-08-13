@@ -1,4 +1,4 @@
-﻿using KeepApi.Data.Entity;
+﻿using KeepApi.Common.Models;
 
 namespace KeepApi.Models.Request.Note
 {
