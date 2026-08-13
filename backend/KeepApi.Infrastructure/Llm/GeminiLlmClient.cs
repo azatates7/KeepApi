@@ -19,11 +19,9 @@ namespace KeepApi.Infrastructure.Llm
         {
             var apiKey = _configuration["Llm:ApiKey"] ?? throw new InvalidOperationException("Llm:ApiKey yok.");
 
-            var model = //_config["Llm:Model"] ??
-                        "gemini-3.6-flash";
+            var model = _configuration["Llm:Model"] ?? "gemini-3.6-flash";
 
-            var baseUrl = //_config["Llm:BaseUrl"] ??
-                          "https://generativelanguage.googleapis.com/v1beta";
+            var baseUrl = _configuration["Llm:BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta";
 
             var url = $"{baseUrl}/models/{model}:generateContent?key={apiKey}";
 

@@ -15,9 +15,9 @@ namespace KeepApi.Data.Seed
 
             var settings = new List<AppSetting>
             {
-                Plain("Llm:Provider", "gemini", "", "KeepApi"),
-                Plain("Llm:Model", "gemini-2.5-flash", "", "KeepApi"),
-                Plain("Llm:BaseUrl", "https://generativelanguage.googleapis.com/v1beta/models", "", "KeepApi"),
+                Plain("Llm:Provider", "gemini", "LLM provider", "KeepApi"),
+                Plain("Llm:Model", "gemini-3.6-flash", "LLM model", "KeepApi"),
+                Plain("Llm:BaseUrl", "https://generativelanguage.googleapis.com/v1beta", "LLM base url", "KeepApi"),
                 Secret("Llm:ApiKey", "AQ.Ab8RN6JjnK_QtxuedMdAr-UBh7WT8nlNiRh2Yx11O1PpU7mXbA", "LLM API key", "KeepApi", crypto),
 
                 Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
@@ -25,25 +25,25 @@ namespace KeepApi.Data.Seed
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),
                 Plain("Jwt:Audience", "KeepReact", "JWT audience", "KeepApi"),
                 Plain("Jwt:ExpireMinutes", "60", "JWT token süresi (dk)", "KeepApi"),
-                Plain("Jwt:ValidateIssuer", "true", "", "KeepApi"),
-                Plain("Jwt:ValidateAudience", "true", "", "KeepApi"),
-                Plain("Jwt:ValidateLifetime", "true", "", "KeepApi"),
-                Plain("Jwt:ValidateIssuerSigningKey", "true", "", "KeepApi"),
+                Plain("Jwt:ValidateIssuer", "true", "JWT issuer doğrulama", "KeepApi"),
+                Plain("Jwt:ValidateAudience", "true", "JWT audience doğrulama", "KeepApi"),
+                Plain("Jwt:ValidateLifetime", "true", "JWT token geçerliliği", "KeepApi"),
+                Plain("Jwt:ValidateIssuerSigningKey", "true", "JWT issuer imza anahtarı doğrulama", "KeepApi"),
                 Secret("Jwt:Key", "THIS_IS_MY_SUPER_SECRET_KEY_MORE_THAN_32_CHARACTERS", "JWT signing key", "KeepApi", crypto),
 
-                Secret("ExternalProviders:Google:ClientId", "646278578348-7e4a8tqtpavac5pbk72ctf5bkvdat7gr.apps.googleusercontent.com", "", "KeepApi", crypto),
-                Secret("ExternalProviders:Google:ClientSecret", "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", "", "KeepApi", crypto),
-                Secret("ExternalProviders:Microsoft:ClientId", "2f8ac164-ed89-4927-afa0-67dc1a67e58c", "", "KeepApi", crypto),
-                Secret("ExternalProviders:Microsoft:ClientSecret", "-mK8Q~h-9cGEck8vlw540CZDnmH72dJlDnBH2am~", "", "KeepApi", crypto),
-                Secret("ExternalProviders:GitHub:ClientId", "Ov23liY6P56DZDTTLzaz", "", "KeepApi", crypto),
-                Secret("ExternalProviders:GitHub:ClientSecret", "61fc5b3c04451d4b966033174d337d243c6b77c9", "", "KeepApi", crypto),
+                Secret("ExternalProviders:Google:ClientId", "646278578348-7e4a8tqtpavac5pbk72ctf5bkvdat7gr.apps.googleusercontent.com", "Google client ID", "KeepApi", crypto),
+                Secret("ExternalProviders:Google:ClientSecret", "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", "Google client secret", "KeepApi", crypto),
+                Secret("ExternalProviders:Microsoft:ClientId", "2f8ac164-ed89-4927-afa0-67dc1a67e58c", "Microsoft client ID", "KeepApi", crypto),
+                Secret("ExternalProviders:Microsoft:ClientSecret", "-mK8Q~h-9cGEck8vlw540CZDnmH72dJlDnBH2am~", "Microsoft client secret", "KeepApi", crypto),
+                Secret("ExternalProviders:GitHub:ClientId", "Ov23liY6P56DZDTTLzaz", "GitHub client ID", "KeepApi", crypto),
+                Secret("ExternalProviders:GitHub:ClientSecret", "61fc5b3c04451d4b966033174d337d243c6b77c9", "GitHub client secret", "KeepApi", crypto),
 
-                Plain("Smtp:Host", "smtp.gmail.com", "", "KeepApi"),
-                Plain("Smtp:Port", "587", "", "KeepApi"),
-                Plain("Smtp:User", "azatates4977@gmail.com", "", "KeepApi"),
+                Plain("Smtp:Host", "smtp.gmail.com", "SMTP host", "KeepApi"),
+                Plain("Smtp:Port", "587", "SMTP port", "KeepApi"),
+                Plain("Smtp:User", "azatates4977@gmail.com", "SMTP user", "KeepApi"),
                 Secret("Smtp:Password", "palf nwuh qctu mnyz", "Gmail app password", "KeepApi", crypto),
-                Plain("Smtp:From", "azatates4977@gmail.com", "", "KeepApi"),
-                Plain("Smtp:EnableSsl", "true", "", "KeepApi")
+                Plain("Smtp:From", "azatates4977@gmail.com", "SMTP from", "KeepApi"),
+                Plain("Smtp:EnableSsl", "true", "SMTP enable SSL", "KeepApi")
             };
 
             context.AppSettings.AddRange(settings);
