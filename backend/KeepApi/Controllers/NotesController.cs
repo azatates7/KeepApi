@@ -21,10 +21,56 @@ namespace KeepApi.Controllers
         private readonly NoteService _noteService;
         private readonly IConfiguration _configuration;
 
-        public NotesController(NoteService noteService, IConfiguration configuration)
+        private readonly AttachmentSummaryService _attachmentSummaryService;
+
+        public NotesController(NoteService noteService, IConfiguration configuration, AttachmentSummaryService attachmentSummaryService)
         {
             _noteService = noteService;
             _configuration = configuration;
+            _attachmentSummaryService = attachmentSummaryService;
+        }
+
+        /// <summary>
+        /// Yüklenen bir görsel/belgeyi (resim, PDF, txt) LLM ile özetler ve not olarak kaydedilebilecek bir başlık + içerik döner.
+        /// Dosyanın kendisi sunucuda saklanmaz; sadece LLM isteğinde kullanılır, notu oluşturmak için ayrıca normal POST /api/notes çağrılmalıdır.
+        /// </summary>
+        /// <response code="200">Özet üretildi.</response>
+        /// <response code="400">Dosya eksik, çok büyük veya desteklenmeyen bir türde.</response>
+        [HttpPost("attachments/summarize")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        [ProducesResponseType(typeof(AttachmentSummaryResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SummarizeAttachment(IFormFile? file, CancellationToken cancellationToken = default)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Dosya gönderilmedi." });
+            }
+
+            if (file.Length > AttachmentSummaryService.MaxAttachmentBytes)
+            {
+                return BadRequest(new { message = "Dosya çok büyük (maks. 8MB)." });
+            }
+
+            if (!AttachmentSummaryService.AllowedMimeTypes.Contains(file.ContentType))
+            {
+                return BadRequest(new { message = "Desteklenmeyen dosya türü. Görsel, PDF veya metin dosyası yükleyin." });
+            }
+
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms, cancellationToken);
+
+            try
+            {
+                var result = await _attachmentSummaryService.SummarizeAsync(
+                    ms.ToArray(), file.ContentType, file.FileName, cancellationToken);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status502BadGateway, new { message = "Özet oluşturulamadı: " + ex.Message });
+            }
         }
 
         /// <summary>Tüm notları listeler (aktif + arşivlenmiş).</summary>
@@ -106,8 +152,8 @@ namespace KeepApi.Controllers
         {
             var deleted = await _noteService.DeleteAsync(id, cancellationToken);
             return deleted ? NoContent() : NotFound();
-        }  
-        
+        }
+
         [HttpGet("trash")]
         public async Task<ActionResult<List<Note>>> GetTrash(CancellationToken cancellationToken = default)
         {

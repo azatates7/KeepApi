@@ -222,8 +222,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                     onChange={(e) => updateItemText(line.key, e.target.value)}
                                     placeholder="Liste öğesi"
                                 />
-                                {
-                                    <button
+                                <button
                                     type="button"
                                     className="checklist-delete"
                                     onClick={() => deleteItem(line.key)}
@@ -316,20 +315,20 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                 </div>
             ) : (
                 <div className="note-body">
-                        {hasImage && (
-                            <div className="note-image-wrap">
-                                <img className="note-image" src={note.imageUrl} alt={note.title || 'Not görseli'} />
-                                <button
-                                    type="button"
-                                    className="note-image-remove"
-                                    onClick={() => onUpdate(note.id, { imageAdded: false, imageUrl: null })}
-                                    aria-label="Görseli sil"
-                                    title="Görseli sil"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                        )}
+                    {hasImage && (
+                        <div className="note-image-wrap">
+                            <img className="note-image" src={note.imageUrl} alt={note.title || 'Not görseli'} />
+                            <button
+                                type="button"
+                                className="note-image-remove"
+                                onClick={() => onUpdate(note.id, { imageAdded: false, imageUrl: null })}
+                                aria-label="Görseli sil"
+                                title="Görseli sil"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    )}
 
                     {editing ? (
                         <div

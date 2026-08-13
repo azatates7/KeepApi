@@ -160,6 +160,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 
 builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
 builder.Services.AddScoped<DailySummaryService>();
+builder.Services.AddScoped<AttachmentSummaryService>();
 
 builder.Services.AddQuartz(q =>
 {
@@ -169,7 +170,7 @@ builder.Services.AddQuartz(q =>
         .ForJob(jobKey)
         .WithIdentity("DailySummaryJob-trigger")
         .WithCronSchedule("0 0 8 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"))));
-    // Linux container'da "Turkey Standard Time" bulunamazsa "Europe/Istanbul" kullanın
+    // Linux container'da "Turkey Standard Time" bulunamazsa "Europe/Istanbul" kullanılmalı
 });
 builder.Services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);
 

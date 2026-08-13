@@ -764,6 +764,13 @@ button {
     display: none;
 }
 
+.composer-attach-status {
+    margin-top: 8px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    font-style: italic;
+}
+
 .composer-image-preview {
     position: relative;
     margin-bottom: 8px;
@@ -852,9 +859,9 @@ button {
     cursor: pointer;
 }
 
-.app-brand:hover {
-    text-decoration: none;
-}
+    .app-brand:hover {
+        text-decoration: none;
+    }
 
 ```
 
@@ -1243,3 +1250,4 @@ button {
         columns: 1;
     }
 }
+cd .
