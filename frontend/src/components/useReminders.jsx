@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
-function fireNotification(note) {
+function fireNotification(note, t) {
 
     if (typeof Notification === 'undefined')
         return;
@@ -8,14 +9,15 @@ function fireNotification(note) {
     if (Notification.permission !== 'granted')
         return;
 
-    new Notification(note.title || 'Hatırlatma', {
-        body: note.content || 'Hatırlatma zamanı geldi.',
+    new Notification(note.title || t('note.reminderTitle'), {
+        body: note.content || t('note.reminderBody'),
         icon: '/favicon.ico'
     });
 }
 
 export function useReminders(notes) {
 
+    const { t } = useTranslation();
     const notifiedRef = useRef(new Set());
 
     useEffect(() => {
@@ -49,7 +51,7 @@ export function useReminders(notes) {
 
                     notifiedRef.current.add(note.id);
 
-                    fireNotification(note);
+                    fireNotification(note, t);
                 }
 
             });
@@ -62,5 +64,5 @@ export function useReminders(notes) {
 
         return () => clearInterval(interval);
 
-    }, [notes]);
+    }, [notes, t]);
 }

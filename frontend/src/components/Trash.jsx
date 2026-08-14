@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { fetchTrash, restoreNote, deleteForever } from "../api";
 import TrashCard from "./TrashCard.jsx";
 import "./Trash.css";
 
 export default function Trash() {
+    const { t } = useTranslation();
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -17,7 +19,7 @@ export default function Trash() {
             setNotes(result);
             setError(null);
         } catch (err) {
-            setError(err.message || "Çöp kutusu yüklenemedi.");
+            setError(err.message || t('trash.loadFailed'));
         } finally {
             setLoading(false);
         }
@@ -32,12 +34,12 @@ export default function Trash() {
             await restoreNote(id);
             await load();
         } catch (err) {
-            setError(err.message || "Not geri yüklenemedi.");
+            setError(err.message || t('trash.restoreFailed'));
         }
     }
 
     async function remove(id) {
-        if (!window.confirm("Not kalıcı olarak silinsin mi?")) {
+        if (!window.confirm(t('trash.confirmDelete'))) {
             return;
         }
 
@@ -45,7 +47,7 @@ export default function Trash() {
             await deleteForever(id);
             await load();
         } catch (err) {
-            setError(err.message || "Not kalıcı olarak silinemedi.");
+            setError(err.message || t('trash.deleteFailed'));
         }
     }
 
@@ -54,11 +56,11 @@ export default function Trash() {
 
             <div className="trash-toolbar">
                 <div className="trash-heading">
-                    <h1>Çöp Kutusu</h1>
+                    <h1>{t('trash.title')}</h1>
 
                     {!loading && (
                         <span>
-                            {notes.length} not
+                            {t('trash.noteCount', { count: notes.length })}
                         </span>
                     )}
                 </div>
@@ -66,7 +68,7 @@ export default function Trash() {
 
             {loading && (
                 <p className="status">
-                    Yükleniyor…
+                    {t('trash.loading')}
                 </p>
             )}
 
@@ -78,7 +80,7 @@ export default function Trash() {
 
             {!loading && !error && notes.length === 0 && (
                 <p className="empty-state">
-                    Çöp kutusu boş.
+                    {t('trash.empty')}
                 </p>
             )}
 

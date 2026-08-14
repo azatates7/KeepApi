@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { login, forgotPassword, resetPassword, setToken } from '../api.js'
+import { LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES } from '../i18n.js'
 import AuthLayout from './AuthLayout.jsx'
 import SocialLoginButtons from './SocialLoginButtons.jsx'
 
@@ -7,6 +9,7 @@ const REMEMBERED_USERNAME_KEY = 'keep_todo_remembered_username'
 const REMEMBER_ME_KEY = 'keep_todo_remember_me'
 
 export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsername }) {
+    const { t, i18n } = useTranslation()
     // 'login' | 'forgot-email' | 'forgot-reset'
     const [view, setView] = useState('login')
 
@@ -44,7 +47,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
         setError(null)
 
         if (!userNameOrEmail.trim() || !password) {
-            setError('Kullanıcı adı/e-posta ve şifre gerekli.')
+            setError(t('auth.login.missingFields'))
             return
         }
 
@@ -59,6 +62,12 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
             } else {
                 localStorage.removeItem(REMEMBER_ME_KEY)
                 localStorage.removeItem(REMEMBERED_USERNAME_KEY)
+            }
+
+            // Kullanıcının kayıtlı dil tercihini arayüze uygula (Günlük Özet ile aynı dil).
+            if (SUPPORTED_LANGUAGES.includes(result.preferredLanguage)) {
+                i18n.changeLanguage(result.preferredLanguage)
+                localStorage.setItem(LANGUAGE_STORAGE_KEY, result.preferredLanguage)
             }
 
             onLoginSuccess(result)
@@ -81,14 +90,14 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
         setError(null)
 
         if (!forgotEmail.trim()) {
-            setError('E-posta adresi gerekli.')
+            setError(t('auth.forgot.missingEmail'))
             return
         }
 
         setLoading(true)
         try {
             await forgotPassword(forgotEmail.trim())
-            setInfo('E-posta adresiniz sistemde kayıtlıysa, doğrulama kodu gönderildi.')
+            setInfo(t('auth.forgot.sentInfo'))
             setView('forgot-reset')
         } catch (err) {
             setError(err.message)
@@ -102,12 +111,12 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
         setError(null)
 
         if (!resetCode.trim() || !newPassword || !confirmNewPassword) {
-            setError('Kod ve yeni şifre alanları gerekli.')
+            setError(t('auth.reset.missingFields'))
             return
         }
 
         if (newPassword !== confirmNewPassword) {
-            setError('Yeni şifreler eşleşmiyor.')
+            setError(t('auth.reset.mismatch'))
             return
         }
 
@@ -119,7 +128,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                 newPassword,
                 confirmNewPassword,
             })
-            setInfo('Şifreniz güncellendi. Şimdi yeni şifrenizle giriş yapabilirsiniz.')
+            setInfo(t('auth.reset.successInfo'))
             setUserNameOrEmail(forgotEmail.trim())
             setPassword('')
             setResetCode('')
@@ -143,12 +152,12 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
         <AuthLayout>
             {view === 'login' && (
                 <>
-                    <h1 className="auth-title">Hoşgeldiniz</h1>
-                    <p className="auth-subtitle">Notlarına ulaşmak için giriş yap</p>
+                    <h1 className="auth-title">{t('auth.login.title')}</h1>
+                    <p className="auth-subtitle">{t('auth.login.subtitle')}</p>
 
                     <form className="auth-form" onSubmit={handleLoginSubmit}>
                         <label className="auth-label">
-                            Kullanıcı Adı veya E-posta
+                            {t('auth.login.usernameOrEmail')}
                             <input
                                 className="auth-input"
                                 type="text"
@@ -160,7 +169,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                         </label>
 
                         <label className="auth-label">
-                            Şifre
+                            {t('auth.login.password')}
                             <input
                                 className="auth-input"
                                 type="password"
@@ -177,25 +186,25 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
                                 />
-                                Beni Hatırla
+                                {t('auth.login.rememberMe')}
                             </label>
 
                             <button type="button" className="auth-link" onClick={goToForgotPassword}>
-                                Şifremi Unuttum
+                                {t('auth.login.forgotPassword')}
                             </button>
                         </div>
 
                         {error && <p className="auth-message auth-message-error">{error}</p>}
 
                         <button className="auth-submit" type="submit" disabled={loading}>
-                            {loading ? 'Giriş Yapılıyor…' : 'Giriş Yap'}
+                            {loading ? t('auth.login.submitLoading') : t('auth.login.submit')}
                         </button>
                     </form>
 
                     <p className="auth-switch">
-                        Hesabın yok mu?{' '}
+                        {t('auth.login.noAccount')}{' '}
                         <button type="button" className="auth-link" onClick={onNavigateRegister}>
-                            Kayıt Ol
+                            {t('auth.login.register')}
                         </button>
                     </p>
 
@@ -205,12 +214,12 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
 
             {view === 'forgot-email' && (
                 <>
-                    <h1 className="auth-title">Şifremi Unuttum</h1>
-                    <p className="auth-subtitle">Şifreni sıfırlamak için e-posta adresini gir</p>
+                    <h1 className="auth-title">{t('auth.forgot.title')}</h1>
+                    <p className="auth-subtitle">{t('auth.forgot.subtitle')}</p>
 
                     <form className="auth-form" onSubmit={handleForgotEmailSubmit}>
                         <label className="auth-label">
-                            E-posta
+                            {t('auth.forgot.email')}
                             <input
                                 className="auth-input"
                                 type="email"
@@ -224,11 +233,11 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                         {error && <p className="auth-message auth-message-error">{error}</p>}
 
                         <button className="auth-submit" type="submit" disabled={loading}>
-                            {loading ? 'Gönderiliyor…' : 'Doğrulama Kodu Gönder'}
+                            {loading ? t('auth.forgot.submitLoading') : t('auth.forgot.submit')}
                         </button>
 
                         <button type="button" className="auth-link auth-back" onClick={backToLogin}>
-                            ← Girişe Dön
+                            {t('auth.forgot.backToLogin')}
                         </button>
                     </form>
                 </>
@@ -236,16 +245,16 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
 
             {view === 'forgot-reset' && (
                 <>
-                    <h1 className="auth-title">Kodu Doğrula</h1>
+                    <h1 className="auth-title">{t('auth.reset.title')}</h1>
                     <p className="auth-subtitle">
-                        {forgotEmail} adresine gönderilen kodu ve yeni şifreni gir
+                        {t('auth.reset.subtitle', { email: forgotEmail })}
                     </p>
 
                     <form className="auth-form" onSubmit={handleResetSubmit}>
                         {info && <p className="auth-message auth-message-info">{info}</p>}
 
                         <label className="auth-label">
-                            Doğrulama Kodu
+                            {t('auth.reset.code')}
                             <input
                                 className="auth-input auth-input-code"
                                 type="text"
@@ -258,7 +267,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                         </label>
 
                         <label className="auth-label">
-                            Yeni Şifre
+                            {t('auth.reset.newPassword')}
                             <input
                                 className="auth-input"
                                 type="password"
@@ -269,7 +278,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                         </label>
 
                         <label className="auth-label">
-                            Yeni Şifre (Tekrar)
+                            {t('auth.reset.confirmNewPassword')}
                             <input
                                 className="auth-input"
                                 type="password"
@@ -282,11 +291,11 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
                         {error && <p className="auth-message auth-message-error">{error}</p>}
 
                         <button className="auth-submit" type="submit" disabled={loading}>
-                            {loading ? 'Güncelleniyor…' : 'Şifreyi Güncelle'}
+                            {loading ? t('auth.reset.submitLoading') : t('auth.reset.submit')}
                         </button>
 
                         <button type="button" className="auth-link auth-back" onClick={backToLogin}>
-                            ← Girişe Dön
+                            {t('auth.reset.backToLogin')}
                         </button>
                     </form>
                 </>

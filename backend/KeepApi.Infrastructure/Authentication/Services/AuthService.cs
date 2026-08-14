@@ -312,8 +312,23 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                PreferredLanguage = user.PreferredLanguage,
                 Roles = roles
             };
+        }
+
+        public async Task UpdateLanguageAsync(Guid userId, string language)
+        {
+            if (language != "tr" && language != "en")
+            {
+                throw new InvalidOperationException("Geçersiz dil. Desteklenen diller: tr, en.");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId.ToString())
+                ?? throw new KeyNotFoundException("Kullanıcı bulunamadı.");
+
+            user.PreferredLanguage = language;
+            await _userManager.UpdateAsync(user);
         }
 
         public async Task ForgotPasswordAsync(ForgotPasswordRequest request)

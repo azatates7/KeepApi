@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import Composer from './components/Composer.jsx'
 import NoteCard from './components/NoteCard.jsx'
 import SearchPanel from './components/SearchPanel.jsx'
+import UserMenu from './components/UserMenu.jsx'
 import {
     createNote,
     deleteNote,
@@ -18,6 +20,7 @@ import Register from './components/Register.jsx'
 import OAuthCallBack from './components/OAuthCallBack.jsx'
 
 export default function App() {
+    const { t } = useTranslation()
     const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()))
     // 'login' | 'register'
     const [authView, setAuthView] = useState('login')
@@ -110,14 +113,14 @@ export default function App() {
     async function handleCreate(newNote) {
         if (!newNote.imageAdded && !newNote.title?.trim()) {
             newNote.title = newNote.checklist
-                ? 'Yeni Liste'
+                ? t('app.untitledList')
                 : newNote.image
-                    ? 'Yeni Görsel'
-                    : 'Yeni Not'
+                    ? t('app.untitledImage')
+                    : t('app.untitledNote')
         }
 
         if (!newNote.imageAdded && !newNote.content?.trim()) {
-            alert('Not boş bırakılamaz.')
+            alert(t('app.noteEmptyAlert'))
             return
         }
 
@@ -128,7 +131,7 @@ export default function App() {
 
     async function handleUpdate(id, patch) {
         if ('title' in patch && !patch.title.trim()) {
-            alert('Başlık boş bırakılamaz.')
+            alert(t('app.titleEmptyAlert'))
             return
         }
 
@@ -137,7 +140,7 @@ export default function App() {
             !patch.content.trim() &&
             !current?.checklist
         ) {
-            alert('Not boş bırakılamaz.')
+            alert(t('app.noteEmptyAlert'))
             return
         }
 
@@ -255,15 +258,15 @@ export default function App() {
         <div className="app">
             <header className={`app-header${searchOpen ? ' search-header-active' : ''}`}>
                 <div className="app-brand">
-                    <a href="http://localhost:5173/" className="app-brand" aria-label="Ana sayfaya dön" >
-                    <img
-                        src="/keepapi-logo.png"
-                        alt="KeepApi"
-                        className="brand-logo"
-                    />
+                    <a href="http://localhost:5173/" className="app-brand" aria-label={t('app.brandAlt')} >
+                        <img
+                            src="/keepapi-logo.png"
+                            alt="KeepApi"
+                            className="brand-logo"
+                        />
 
-                    <h1 className="wordmark">
-                        KeepApi
+                        <h1 className="wordmark">
+                            KeepApi
                         </h1>
                     </a>
                 </div>
@@ -281,8 +284,8 @@ export default function App() {
                             setSearchQuery(event.target.value)
                             setSearchOpen(true)
                         }}
-                        placeholder="Arama yapın"
-                        aria-label="Notlarda ara"
+                        placeholder={t('app.searchPlaceholder')}
+                        aria-label={t('app.searchAriaLabel')}
                     />
 
                     {searchOpen && (
@@ -296,8 +299,8 @@ export default function App() {
                                     closeSearch()
                                 }
                             }}
-                            aria-label={searchQuery ? 'Aramayı temizle' : 'Aramayı kapat'}
-                            title={searchQuery ? 'Aramayı temizle' : 'Aramayı kapat'}
+                            aria-label={searchQuery ? t('app.searchClear') : t('app.searchClose')}
+                            title={searchQuery ? t('app.searchClear') : t('app.searchClose')}
                         >
                             ×
                         </button>
@@ -308,9 +311,9 @@ export default function App() {
                     <button
                         className="header-action"
                         onClick={toggleArchiveView}
-                        title={showArchived ? 'Aktif notlara dön' : 'Arşivi aç'}
+                        title={showArchived ? t('app.backToActiveNotes') : t('app.openArchive')}
                     >
-                        {showArchived ? 'Aktif Notlar' : 'Arşiv'}
+                        {showArchived ? t('app.activeNotes') : t('app.archive')}
                     </button>
 
                     <button
@@ -319,37 +322,12 @@ export default function App() {
                             setSearchOpen(false)
                             setShowTrash(true)
                         }}
-                        title="Çöp kutusunu aç"
+                        title={t('app.openTrash')}
                     >
-                        Çöp Kutusu
+                        {t('app.trash')}
                     </button>
 
-                    <div className="user-actions">
-
-                        <div
-                            className="current-user"
-                            title={prefillUsername || 'Kullanıcı'}
-                        >
-                            <div className="user-avatar">
-                                {(prefillUsername || 'U')
-                                    .trim()
-                                    .charAt(0)
-                                    .toUpperCase()}
-                            </div>
-
-                            <span className="username">
-                                {prefillUsername || 'Kullanıcı'}
-                            </span>
-                        </div>
-
-                        <button
-                            type="button"
-                            className="logout-button"
-                            onClick={handleLogout}
-                        >
-                            Çıkış Yap
-                        </button>
-                    </div>
+                    <UserMenu username={prefillUsername} onLogout={handleLogout} />
                 </div>
             </header>
 
@@ -366,20 +344,20 @@ export default function App() {
                 <>
                     {!showArchived && <Composer onCreate={handleCreate} />}
 
-                    {loading && <p className="status">Yükleniyor…</p>}
-                    {error && <p className="status error">Bağlantı Hatası: {error}</p>}
+                    {loading && <p className="status">{t('app.loading')}</p>}
+                    {error && <p className="status error">{t('app.connectionError', { message: error })}</p>}
 
                     {!loading && visible.length === 0 && (
                         <p className="empty-state">
                             {showArchived
-                                ? 'Arşivde Not Yok'
-                                : 'Henüz Not Yok — Yukarıdan Bir Tane Ekle'}
+                                ? t('app.noNotesArchive')
+                                : t('app.noNotesEmpty')}
                         </p>
                     )}
 
                     {pinned.length > 0 && (
                         <section className="note-section">
-                            <h2 className="section-label">Sabitlenmiş</h2>
+                            <h2 className="section-label">{t('app.pinnedSection')}</h2>
                             <div className="note-grid">
                                 {pinned.map((note) => (
                                     <NoteCard
@@ -395,7 +373,7 @@ export default function App() {
 
                     {others.length > 0 && (
                         <section className="note-section">
-                            {pinned.length > 0 && <h2 className="section-label">Notlar</h2>}
+                            {pinned.length > 0 && <h2 className="section-label">{t('app.notesSection')}</h2>}
                             <div className="note-grid">
                                 {others.map((note) => (
                                     <NoteCard

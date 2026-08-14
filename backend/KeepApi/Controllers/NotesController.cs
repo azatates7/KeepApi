@@ -57,13 +57,13 @@ namespace KeepApi.Controllers
                 return BadRequest(new { message = "Desteklenmeyen dosya türü. Görsel, PDF veya metin dosyası yükleyin." });
             }
 
-            using var ms = new MemoryStream();
-            await file.CopyToAsync(ms, cancellationToken);
+            using var memoryStrean = new MemoryStream();
+            await file.CopyToAsync(memoryStrean, cancellationToken);
 
             try
             {
                 var result = await _attachmentSummaryService.SummarizeAsync(
-                    ms.ToArray(), file.ContentType, file.FileName, cancellationToken);
+                    memoryStrean.ToArray(), file.ContentType, file.FileName, cancellationToken);
 
                 return Ok(result);
             }

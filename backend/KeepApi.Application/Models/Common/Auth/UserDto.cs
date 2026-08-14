@@ -13,5 +13,6 @@
         public string LastName { get; set; } = string.Empty;
 
         public IList<string> Roles { get; set; } = [];
+        public string PreferredLanguage { get; set; } = "tr";
     }
 }

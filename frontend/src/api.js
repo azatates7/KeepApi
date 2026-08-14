@@ -130,6 +130,16 @@ export async function resetPassword({ email, code, newPassword, confirmNewPasswo
     return unwrap(res, 'Şifre güncellenemedi.')
 }
 
+// Kullanıcının arayüz/özet dilini backend'e yazar (Günlük Özet job'ı bu değeri okur).
+export async function updateLanguage(language) {
+    const res = await apiFetch(`${AUTH_BASE_URL}/me/language`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language }),
+    })
+    return unwrap(res, 'Dil güncellenemedi.')
+}
+
 // ---- notes ----
 
 export async function fetchNotes() {
@@ -157,31 +167,6 @@ export async function createNote(note) {
         body: JSON.stringify(note),
     })
     if (!res.ok) throw new Error('Not Oluşturulamadı')
-    return res.json()
-}
-
-// Dosya (görsel/PDF/txt) yükler, LLM özetini { title, content } olarak döner.
-// Not: bu çağrı notu OLUŞTURMAZ, sadece özet üretir; oluşturmak için createNote çağrılmalı.
-export async function summarizeAttachment(file) {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await apiFetch(`${NOTES_BASE_URL}/attachments/summarize`, {
-        method: 'POST',
-        body: formData,
-    })
-
-    if (!res.ok) {
-        let message = 'Dosya özetlenemedi.'
-        try {
-            const body = await res.json()
-            message = body?.message || message
-        } catch {
-            // body yok/parse edilemedi
-        }
-        throw new Error(message)
-    }
-
     return res.json()
 }
 

@@ -3,6 +3,7 @@ using System;
 using KeepApi.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace KeepApi.Data.Migrations
 {
     [DbContext(typeof(KeepDbContext))]
-    partial class KeepDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260814141555_Add_PreferredLanguage_Column_ApplicationUser_Table")]
+    partial class Add_PreferredLanguage_Column_ApplicationUser_Table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

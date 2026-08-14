@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { register, verifyEmail } from '../api.js'
 import AuthLayout from './AuthLayout.jsx'
 import SocialLoginButtons from './SocialLoginButtons.jsx'
 
 export default function Register({ onNavigateLogin }) {
+    const { t } = useTranslation()
     // 'form' | 'verify'
     const [view, setView] = useState('form')
 
@@ -25,12 +27,12 @@ export default function Register({ onNavigateLogin }) {
         setError(null)
 
         if (!userName.trim() || !email.trim() || !firstName.trim() || !lastName.trim() || !password) {
-            setError('Tüm alanlar gerekli.')
+            setError(t('auth.register.missingFields'))
             return
         }
 
         if (password !== confirmPassword) {
-            setError('Şifreler eşleşmiyor.')
+            setError(t('auth.register.mismatch'))
             return
         }
 
@@ -44,7 +46,7 @@ export default function Register({ onNavigateLogin }) {
                 password,
                 confirmPassword,
             })
-            setInfo(`${email.trim()} adresine gönderilen doğrulama kodunu gir.`)
+            setInfo(t('auth.register.verificationInfo', { email: email.trim() }))
             setView('verify')
         } catch (err) {
             setError(err.message)
@@ -58,7 +60,7 @@ export default function Register({ onNavigateLogin }) {
         setError(null)
 
         if (!code.trim()) {
-            setError('Doğrulama kodu gerekli.')
+            setError(t('auth.verify.missingCode'))
             return
         }
 
@@ -77,13 +79,13 @@ export default function Register({ onNavigateLogin }) {
         <AuthLayout>
             {view === 'form' && (
                 <>
-                    <h1 className="auth-title">Kayıt Ol</h1>
-                    <p className="auth-subtitle">Notlarını tutmaya başlamak için hesap oluştur</p>
+                    <h1 className="auth-title">{t('auth.register.title')}</h1>
+                    <p className="auth-subtitle">{t('auth.register.subtitle')}</p>
 
                     <form className="auth-form" onSubmit={handleRegisterSubmit}>
                         <div className="auth-row-split">
                             <label className="auth-label">
-                                Ad
+                                {t('auth.register.firstName')}
                                 <input
                                     className="auth-input"
                                     type="text"
@@ -94,7 +96,7 @@ export default function Register({ onNavigateLogin }) {
                             </label>
 
                             <label className="auth-label">
-                                Soyad
+                                {t('auth.register.lastName')}
                                 <input
                                     className="auth-input"
                                     type="text"
@@ -105,7 +107,7 @@ export default function Register({ onNavigateLogin }) {
                         </div>
 
                         <label className="auth-label">
-                            Kullanıcı Adı
+                            {t('auth.register.username')}
                             <input
                                 className="auth-input"
                                 type="text"
@@ -116,7 +118,7 @@ export default function Register({ onNavigateLogin }) {
                         </label>
 
                         <label className="auth-label">
-                            E-posta
+                            {t('auth.register.email')}
                             <input
                                 className="auth-input"
                                 type="email"
@@ -127,7 +129,7 @@ export default function Register({ onNavigateLogin }) {
                         </label>
 
                         <label className="auth-label">
-                            Şifre
+                            {t('auth.register.password')}
                             <input
                                 className="auth-input"
                                 type="password"
@@ -138,7 +140,7 @@ export default function Register({ onNavigateLogin }) {
                         </label>
 
                         <label className="auth-label">
-                            Şifre (Tekrar)
+                            {t('auth.register.confirmPassword')}
                             <input
                                 className="auth-input"
                                 type="password"
@@ -151,14 +153,14 @@ export default function Register({ onNavigateLogin }) {
                         {error && <p className="auth-message auth-message-error">{error}</p>}
 
                         <button className="auth-submit" type="submit" disabled={loading}>
-                            {loading ? 'Kayıt Oluşturuluyor…' : 'Kayıt Ol'}
+                            {loading ? t('auth.register.submitLoading') : t('auth.register.submit')}
                         </button>
                     </form>
 
                     <p className="auth-switch">
-                        Zaten hesabın var mı?{' '}
+                        {t('auth.register.haveAccount')}{' '}
                         <button type="button" className="auth-link" onClick={() => onNavigateLogin()}>
-                            Giriş Yap
+                            {t('auth.register.login')}
                         </button>
                     </p>
 
@@ -168,12 +170,12 @@ export default function Register({ onNavigateLogin }) {
 
             {view === 'verify' && (
                 <>
-                    <h1 className="auth-title">E-postanı Doğrula</h1>
+                    <h1 className="auth-title">{t('auth.verify.title')}</h1>
                     <p className="auth-subtitle">{info}</p>
 
                     <form className="auth-form" onSubmit={handleVerifySubmit}>
                         <label className="auth-label">
-                            Doğrulama Kodu
+                            {t('auth.verify.code')}
                             <input
                                 className="auth-input auth-input-code"
                                 type="text"
@@ -188,11 +190,11 @@ export default function Register({ onNavigateLogin }) {
                         {error && <p className="auth-message auth-message-error">{error}</p>}
 
                         <button className="auth-submit" type="submit" disabled={loading}>
-                            {loading ? 'Doğrulanıyor…' : 'Doğrula ve Giriş Yap'}
+                            {loading ? t('auth.verify.submitLoading') : t('auth.verify.submit')}
                         </button>
 
                         <button type="button" className="auth-link auth-back" onClick={() => onNavigateLogin()}>
-                            ← Girişe Dön
+                            {t('auth.verify.backToLogin')}
                         </button>
                     </form>
                 </>

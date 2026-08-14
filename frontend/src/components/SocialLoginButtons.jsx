@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { startOAuthLogin } from '../OAuthConfig.jsx'
 
 const ICONS = {
@@ -27,16 +28,23 @@ const ICONS = {
     ),
 }
 
+const PROVIDER_NAMES = {
+    google: 'Google',
+    microsoft: 'Microsoft',
+    github: 'GitHub',
+}
+
 const PROVIDERS = ['google', 'microsoft', 'github']
 
 // action: 'login' | 'register' — sadece buton metnini değiştirir.
 export default function SocialLoginButtons({ action = 'login' }) {
-    const verb = action === 'register' ? 'ile kayıt ol' : 'ile giriş yap'
+    const { t } = useTranslation()
+    const translationKey = action === 'register' ? 'auth.social.registerWithProvider' : 'auth.social.loginWithProvider'
 
     return (
         <div className="social-login">
             <div className="social-login-divider">
-                <span>veya</span>
+                <span>{t('auth.social.or')}</span>
             </div>
 
             <div className="social-login-grid">
@@ -49,11 +57,7 @@ export default function SocialLoginButtons({ action = 'login' }) {
                     >
                         {ICONS[provider]}
                         <span>
-                            {provider === 'google' && 'Google'}
-                            {provider === 'microsoft' && 'Microsoft'}
-                            {provider === 'github' && 'GitHub'}
-                            {' '}
-                            {verb}
+                            {t(translationKey, { provider: PROVIDER_NAMES[provider] })}
                         </span>
                     </button>
                 ))}

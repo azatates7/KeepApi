@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ColorDots from './ColorDots.jsx'
 
 const CHECKBOX_REGEX = /^- \[( |x|X)\] (.*)$/
@@ -20,6 +21,7 @@ function linesToContent(lines) {
 }
 
 export default function NoteCard({ note, onUpdate, onDelete }) {
+    const { t, i18n } = useTranslation()
     const isChecklist = Boolean(note.checklist)
     const hasImage = Boolean(note.imageAdded) && Boolean(note.imageUrl)
 
@@ -87,12 +89,12 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
 
         if (!hasImage && !finalTitle.trim()) {
             finalTitle = isChecklist
-                ? 'Yeni Liste'
-                : 'Yeni Not'
+                ? t('app.untitledList')
+                : t('app.untitledNote')
         }
 
         if (!hasImage && !isChecklist && !content.trim()) {
-            setError("Not boş bırakılamaz.")
+            setError(t('app.noteEmptyAlert'))
             return
         }
 
@@ -132,7 +134,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
     }
 
     function formatReminder(iso) {
-        return new Intl.DateTimeFormat('tr-TR', {
+        const locale = i18n.language === 'en' ? 'en-US' : 'tr-TR'
+        return new Intl.DateTimeFormat(locale, {
             day: '2-digit',
             month: '2-digit',
             hour: '2-digit',
@@ -145,8 +148,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
             <button
                 className={`pin-tab${note.pinned ? ' pinned' : ''}`}
                 onClick={togglePin}
-                aria-label={note.pinned ? 'Sabitlemeyi Kaldır' : 'Sabitle'}
-                title={note.pinned ? 'Sabitlemeyi Kaldır' : 'Sabitle'}
+                aria-label={note.pinned ? t('note.unpin') : t('note.pin')}
+                title={note.pinned ? t('note.unpin') : t('note.pin')}
             >
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                     <path d="M14 4v5c0 1.12.37 2.16 1 3H9c.65-.86 1-1.9 1-3V4h4m3-2H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H18v-2c-1.66 0-3-1.34-3-3V4h1c.55 0 1-.45 1-1s-.45-1-1-1z" />
@@ -175,11 +178,11 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                     <div className="reminder-popover-actions">
                         {note.reminderAt && (
                             <button type="button" className="link-btn" onClick={clearReminder}>
-                                Kaldır
+                                {t('note.removeReminder')}
                             </button>
                         )}
                         <button type="submit" className="btn-primary btn-small">
-                            Kaydet
+                            {t('note.saveReminder')}
                         </button>
                     </div>
                 </form>
@@ -188,8 +191,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
             <button
                 className={`icon-btn${note.reminderAt ? ' active' : ''}`}
                 onClick={() => setShowReminder((s) => !s)}
-                title="hatırlatma ekle"
-                aria-label="hatırlatma ekle"
+                title={t('note.addReminder')}
+                aria-label={t('note.addReminder')}
             >
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
                     <path d="M12 4a5 5 0 00-5 5v3.5l-1.5 3h13L17 12.5V9a5 5 0 00-5-5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
@@ -204,7 +207,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                         value={titleDraft}
                         onChange={(e) => setTitleDraft(e.target.value)}
                         onBlur={commitTitle}
-                        placeholder="Başlık"
+                        placeholder={t('note.titlePlaceholder')}
                     />
 
                     <ul className="note-checklist">
@@ -220,14 +223,14 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                     className="checklist-text-input"
                                     value={line.text}
                                     onChange={(e) => updateItemText(line.key, e.target.value)}
-                                    placeholder="Liste öğesi"
+                                    placeholder={t('note.listItemPlaceholder')}
                                 />
                                 <button
                                     type="button"
                                     className="checklist-delete"
                                     onClick={() => deleteItem(line.key)}
-                                    aria-label="Liste öğesini sil"
-                                    title="Liste öğesini sil"
+                                    aria-label={t('note.deleteListItem')}
+                                    title={t('note.deleteListItem')}
                                 >
                                     <svg
                                         viewBox="0 0 24 24"
@@ -265,7 +268,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                         <span className="checklist-add-icon">+</span>
                         <input
                             className="checklist-add-input"
-                            placeholder="Liste öğesi"
+                            placeholder={t('note.listItemPlaceholder')}
                             value={newItemText}
                             onChange={(e) => setNewItemText(e.target.value)}
                         />
@@ -279,7 +282,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                 onClick={() => setShowCompleted((s) => !s)}
                             >
                                 <span className={`chevron${showCompleted ? ' open' : ''}`}>›</span>
-                                Tamamlanmış {checkedLines.length} öğe
+                                {t('note.completedItems', { count: checkedLines.length })}
                             </button>
 
                             {showCompleted && (
@@ -301,8 +304,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                                 type="button"
                                                 className="checklist-delete"
                                                 onClick={() => deleteItem(line.key)}
-                                                aria-label="Öğeyi sil"
-                                                title="Öğeyi sil"
+                                                aria-label={t('note.deleteItem')}
+                                                title={t('note.deleteItem')}
                                             >
                                                 ×
                                             </button>
@@ -317,13 +320,13 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                 <div className="note-body">
                     {hasImage && (
                         <div className="note-image-wrap">
-                            <img className="note-image" src={note.imageUrl} alt={note.title || 'Not görseli'} />
+                            <img className="note-image" src={note.imageUrl} alt={note.title || t('note.imageAlt')} />
                             <button
                                 type="button"
                                 className="note-image-remove"
                                 onClick={() => onUpdate(note.id, { imageAdded: false, imageUrl: null })}
-                                aria-label="Görseli sil"
-                                title="Görseli sil"
+                                aria-label={t('note.removeImage')}
+                                title={t('note.removeImage')}
                             >
                                 ×
                             </button>
@@ -347,7 +350,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                     setTitle(e.target.value)
                                     setError("")
                                 }}
-                                placeholder="Başlık"
+                                placeholder={t('note.titlePlaceholder')}
                                 autoFocus={!hasImage}
                             />
                             <textarea
@@ -357,7 +360,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                                     setContent(e.target.value)
                                     setError("")
                                 }}
-                                placeholder={hasImage ? 'Açıklama ekle...' : undefined}
+                                placeholder={hasImage ? t('note.descriptionPlaceholder') : undefined}
                                 rows={hasImage ? 3 : 5}
                             />
                             {error && <div className="note-error">{error}</div>}
@@ -367,7 +370,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                             {note.title && <h3 className="note-title">{note.title}</h3>}
                             {(note.content || !hasImage) && (
                                 <p className="note-content">
-                                    {note.content || <span className="placeholder">Boş Not</span>}
+                                    {note.content || <span className="placeholder">{t('note.emptyNote')}</span>}
                                 </p>
                             )}
                         </div>
@@ -380,8 +383,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                     <button
                         className="icon-btn"
                         onClick={() => setShowPalette((s) => !s)}
-                        title="Renk Değiştir"
-                        aria-label="Renk Değiştir"
+                        title={t('note.changeColor')}
+                        aria-label={t('note.changeColor')}
                     >
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
                             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
@@ -390,8 +393,8 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                     <button
                         className="icon-btn"
                         onClick={toggleArchive}
-                        title={note.archived ? 'Arşivden Çıkar' : 'Arşivle'}
-                        aria-label="arşivle"
+                        title={note.archived ? t('note.unarchive') : t('note.archive')}
+                        aria-label={t('note.archive')}
                     >
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
                             <rect x="3" y="4" width="18" height="4" rx="1" stroke="currentColor" strokeWidth="1.4" />
@@ -400,7 +403,7 @@ export default function NoteCard({ note, onUpdate, onDelete }) {
                         </svg>
                     </button>
                 </div>
-                <button className="icon-btn danger" onClick={() => onDelete(note.id)} title="Sil" aria-label="Sil">
+                <button className="icon-btn danger" onClick={() => onDelete(note.id)} title={t('note.delete')} aria-label={t('note.delete')}>
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
                         <path
                             d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v13a1 1 0 001 1h8a1 1 0 001-1V7"

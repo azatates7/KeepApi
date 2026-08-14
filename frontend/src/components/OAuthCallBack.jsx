@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { externalLogin, setToken } from '../api.js'
 import { consumeOAuthState, getRedirectUri } from '../OAuthConfig.jsx'
+import { LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES } from '../i18n.js'
 import AuthLayout from './AuthLayout.jsx'
 
 // Google/Microsoft/GitHub'ın kullanıcıyı geri yönlendirdiği sayfa.
 // URL: /oauth/callback?code=...&state=...  (veya hata durumunda ?error=...)
 export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
+    const { t, i18n } = useTranslation()
     const [status, setStatus] = useState('processing') // 'processing' | 'error'
     const [error, setError] = useState(null)
     const ranOnce = useRef(false)
@@ -29,13 +32,13 @@ export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
             const provider = consumeOAuthState(state)
 
             if (!provider) {
-                setError('Giriş isteği doğrulanamadı (geçersiz veya süresi dolmuş state). Lütfen tekrar deneyin.')
+                setError(t('auth.oauth.invalidState'))
                 setStatus('error')
                 return
             }
 
             if (!code) {
-                setError('Sağlayıcıdan bir yetkilendirme kodu alınamadı.')
+                setError(t('auth.oauth.missingCode'))
                 setStatus('error')
                 return
             }
@@ -43,6 +46,12 @@ export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
             try {
                 const result = await externalLogin(provider, code, getRedirectUri())
                 setToken(result.token)
+
+                if (SUPPORTED_LANGUAGES.includes(result.preferredLanguage)) {
+                    i18n.changeLanguage(result.preferredLanguage)
+                    localStorage.setItem(LANGUAGE_STORAGE_KEY, result.preferredLanguage)
+                }
+
                 window.history.replaceState({}, '', '/')
                 onLoginSuccess(result)
             } catch (err) {
@@ -52,20 +61,20 @@ export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
         }
 
         run()
-    }, [onLoginSuccess])
+    }, [onLoginSuccess, t, i18n])
 
     if (status === 'processing') {
         return (
             <AuthLayout>
-                <h1 className="auth-title">Giriş yapılıyor…</h1>
-                <p className="auth-subtitle">Sağlayıcı ile bağlantı doğrulanıyor, lütfen bekleyin.</p>
+                <h1 className="auth-title">{t('auth.oauth.processingTitle')}</h1>
+                <p className="auth-subtitle">{t('auth.oauth.processingSubtitle')}</p>
             </AuthLayout>
         )
     }
 
     return (
         <AuthLayout>
-            <h1 className="auth-title">Giriş başarısız</h1>
+            <h1 className="auth-title">{t('auth.oauth.failedTitle')}</h1>
             <p className="auth-message auth-message-error">{error}</p>
             <button
                 type="button"
@@ -75,7 +84,7 @@ export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
                     onCancel()
                 }}
             >
-                Girişe Dön
+                {t('auth.oauth.backToLogin')}
             </button>
         </AuthLayout>
     )

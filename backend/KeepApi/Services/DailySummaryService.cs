@@ -29,6 +29,13 @@ namespace KeepApi.Services
         {
             try
             {
+                var user = await _context.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => new { u.PreferredLanguage })
+                    .FirstOrDefaultAsync(ct);
+
+                var lang = user?.PreferredLanguage == "en" ? "en" : "tr";
+
                 var since = DateTime.UtcNow.AddHours(-24);
 
                 var raw = await _context.Notes
@@ -62,12 +69,20 @@ namespace KeepApi.Services
                 string summaryText;
                 if (recentNotes.Count == 0)
                 {
-                    summaryText = "Bugün için özetlenecek yeni not bulunamadı.";
+                    summaryText = lang == "en"
+                        ? "No new notes were found to summarize today."
+                        : "Bugün için özetlenecek yeni not bulunamadı.";
                 }
                 else
                 {
-                    var notesText = string.Join("\n---\n", recentNotes.Select(n => $"Başlık: {n.Title}\nİçerik: {n.Content}"));
-                    var prompt = $"Aşağıdaki notları tek bir günlük özet paragrafı halinde, Türkçe ve kısa şekilde özetle:\n\n{notesText}";
+                    var notesText = lang == "en"
+                        ? string.Join("\n---\n", recentNotes.Select(n => $"Title: {n.Title}\nContent: {n.Content}"))
+                        : string.Join("\n---\n", recentNotes.Select(n => $"Başlık: {n.Title}\nİçerik: {n.Content}"));
+
+                    var prompt = lang == "en"
+                        ? $"Summarize the following notes into a single short daily summary paragraph, in English:\n\n{notesText}"
+                        : $"Aşağıdaki notları tek bir günlük özet paragrafı halinde, Türkçe ve kısa şekilde özetle:\n\n{notesText}";
+
                     summaryText = await _llm.SummarizeAsync(prompt, ct);
                 }
 
@@ -88,7 +103,9 @@ namespace KeepApi.Services
                     existingSummaryNote.UpdatedById = userId;
                 }
 
-                existingSummaryNote.Title = $"Günlük Özet - {DateTime.Now:dd.MM.yyyy}";
+                existingSummaryNote.Title = lang == "en"
+                    ? $"Daily Summary - {DateTime.Now:dd.MM.yyyy}"
+                    : $"Günlük Özet - {DateTime.Now:dd.MM.yyyy}";
                 existingSummaryNote.Content = summaryText;
 
                 _context.DailySummaryHistories.Add(new DailySummaryHistory

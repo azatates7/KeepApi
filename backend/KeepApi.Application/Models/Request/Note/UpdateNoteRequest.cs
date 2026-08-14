@@ -1,6 +1,6 @@
 ﻿using KeepApi.Common.Models;
 
-namespace KeepApi.Models.Request
+namespace KeepApi.Application.Models.Request.Note
 {
     public class UpdateNoteRequest : BaseEntity
     {

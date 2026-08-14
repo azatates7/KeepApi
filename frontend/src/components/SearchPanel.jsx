@@ -1,29 +1,30 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
-function categoryInfo(note) {
+function categoryInfo(note, t) {
     if (note.isDeleted) {
         return {
-            label: 'Silinmiş',
+            label: t('search.categoryDeleted'),
             className: 'deleted',
         }
     }
 
     if (note.pinned) {
         return {
-            label: 'Sabitlenmiş',
+            label: t('search.categoryPinned'),
             className: 'pinned',
         }
     }
 
     if (note.archived) {
         return {
-            label: 'Arşivlenmiş',
+            label: t('search.categoryArchived'),
             className: 'archived',
         }
     }
 
     return {
-        label: 'Normal Not',
+        label: t('search.categoryNormal'),
         className: 'normal',
     }
 }
@@ -52,7 +53,7 @@ function matchesFilter(note, filter) {
     return true
 }
 
-function formatDate(value) {
+function formatDate(value, locale) {
     if (!value) {
         return ''
     }
@@ -63,15 +64,15 @@ function formatDate(value) {
         return ''
     }
 
-    return new Intl.DateTimeFormat('tr-TR', {
+    return new Intl.DateTimeFormat(locale, {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
     }).format(date)
 }
 
-function NoteSearchResult({ note }) {
-    const category = categoryInfo(note)
+function NoteSearchResult({ note, t, locale }) {
+    const category = categoryInfo(note, t)
 
     const hasImage = Boolean(
         note.imageAdded &&
@@ -94,25 +95,25 @@ function NoteSearchResult({ note }) {
 
                     {note.pinned && !note.isDeleted && (
                         <span className="search-secondary-badge">
-                            Sabit
+                            {t('search.badgePinned')}
                         </span>
                     )}
 
                     {note.archived && !note.isDeleted && (
                         <span className="search-secondary-badge">
-                            Arşiv
+                            {t('search.badgeArchived')}
                         </span>
                     )}
 
                     {note.isDeleted && (
                         <span className="search-secondary-badge">
-                            Çöp Kutusu
+                            {t('search.badgeTrash')}
                         </span>
                     )}
 
                     {note.createdAt && (
                         <span className="search-result-date">
-                            {formatDate(note.createdAt)}
+                            {formatDate(note.createdAt, locale)}
                         </span>
                     )}
 
@@ -128,7 +129,7 @@ function NoteSearchResult({ note }) {
                     <img
                         className="search-result-image"
                         src={note.imageUrl}
-                        alt={note.title || 'Not görseli'}
+                        alt={note.title || t('search.imageAlt')}
                     />
                 )}
 
@@ -142,7 +143,7 @@ function NoteSearchResult({ note }) {
                     !note.content &&
                     !hasImage && (
                         <p className="search-result-empty">
-                            Boş Not
+                            {t('search.emptyNote')}
                         </p>
                     )}
 
@@ -157,12 +158,15 @@ export default function SearchPanel({
     filter,
     onFilterChange,
 }) {
+    const { t, i18n } = useTranslation()
+    const locale = i18n.language === 'en' ? 'en-US' : 'tr-TR'
+
     const filteredNotes = useMemo(() => {
 
         const normalizedQuery =
             query
                 .trim()
-                .toLocaleLowerCase('tr-TR')
+                .toLocaleLowerCase(locale)
 
         return notes
             .filter((note) =>
@@ -180,24 +184,24 @@ export default function SearchPanel({
                     note.color,
 
                     note.checklist
-                        ? 'liste'
+                        ? t('search.keywordChecklist')
                         : '',
 
                     note.pinned
-                        ? 'sabitlenmiş sabit'
+                        ? t('search.keywordPinned')
                         : '',
 
                     note.archived
-                        ? 'arşivlenmiş arşiv'
+                        ? t('search.keywordArchived')
                         : '',
 
                     note.isDeleted
-                        ? 'silinmiş çöp kutusu'
+                        ? t('search.keywordDeleted')
                         : '',
                 ]
                     .filter(Boolean)
                     .join(' ')
-                    .toLocaleLowerCase('tr-TR')
+                    .toLocaleLowerCase(locale)
 
                 return searchableText.includes(
                     normalizedQuery
@@ -222,35 +226,35 @@ export default function SearchPanel({
                 return bTime - aTime
             })
 
-    }, [notes, query, filter])
+    }, [notes, query, filter, locale, t])
 
     const filters = [
         {
             key: 'all',
-            label: 'Tümü',
+            label: t('search.filterAll'),
         },
         {
             key: 'normal',
-            label: 'Normal Not',
+            label: t('search.filterNormal'),
         },
         {
             key: 'pinned',
-            label: 'Sabitlenmiş',
+            label: t('search.filterPinned'),
         },
         {
             key: 'archived',
-            label: 'Arşivlenmiş',
+            label: t('search.filterArchived'),
         },
         {
             key: 'deleted',
-            label: 'Silinmiş',
+            label: t('search.filterDeleted'),
         },
     ]
 
     return (
         <section
             className="search-panel"
-            aria-label="Notlarda arama"
+            aria-label={t('search.ariaLabel')}
         >
 
             <div className="search-panel-header">
@@ -259,12 +263,12 @@ export default function SearchPanel({
 
                     <h2>
                         {query.trim()
-                            ? 'Arama sonuçları'
-                            : 'Tüm kayıtlar'}
+                            ? t('search.resultsTitle')
+                            : t('search.allRecordsTitle')}
                     </h2>
 
                     <span>
-                        {filteredNotes.length} kayıt
+                        {t('search.recordCount', { count: filteredNotes.length })}
                     </span>
 
                 </div>
@@ -304,11 +308,11 @@ export default function SearchPanel({
                     </div>
 
                     <strong>
-                        Kayıt bulunamadı
+                        {t('search.notFound')}
                     </strong>
 
                     <span>
-                        Başka bir kelime veya kategori deneyin.
+                        {t('search.tryAnother')}
                     </span>
 
                 </div>
@@ -322,6 +326,8 @@ export default function SearchPanel({
                         <NoteSearchResult
                             key={note.id}
                             note={note}
+                            t={t}
+                            locale={locale}
                         />
 
                     ))}

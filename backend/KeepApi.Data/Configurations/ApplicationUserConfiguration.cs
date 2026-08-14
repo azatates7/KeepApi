@@ -18,6 +18,10 @@ namespace KeepApi.Data.Configurations
 
             builder.Property(x => x.IsDeleted)
                 .HasDefaultValue(false);
+
+            builder.Property(x => x.PreferredLanguage)
+                .HasMaxLength(5)
+                .HasDefaultValue("tr");
         }
     }
 }

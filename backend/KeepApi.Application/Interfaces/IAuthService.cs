@@ -19,6 +19,9 @@ namespace KeepApi.Application.Interfaces
         /// <summary>Kullanıcı e-postaya kayıtlıysa, e-postasına 6 haneli bir sıfırlama kodu gönderir.
         /// E-posta kayıtlı değilse de sessizce başarılı döner (enumeration koruması).</summary>
 
+        /// <summary>Kullanıcının arayüz/özet dilini günceller ("tr" | "en").</summary>
+        Task UpdateLanguageAsync(Guid userId, string language);
+
         Task ForgotPasswordAsync(ForgotPasswordRequest request);
 
         /// <summary>Kodu doğrular ve doğruysa şifreyi yeniler.</summary>
