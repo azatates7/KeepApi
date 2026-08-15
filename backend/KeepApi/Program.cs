@@ -158,7 +158,21 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
     return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty)); // Burada hata alınırsa Redis aktifleştirilmeli
 });
 
-builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
+//builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
+// Llm:Provider ayarına göre "gemini" veya "openai" istemcisi kaydedilir.
+// DailySummaryService yalnızca ILlmClient'a bağımlı olduğu için provider
+// değişimi bu tek yeri etkiler.
+var llmProvider = builder.Configuration["Llm:Provider"] ?? "gemini";
+
+if (string.Equals(llmProvider, "openai", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHttpClient<ILlmClient, OpenAiLlmClient>();
+}
+else
+{
+    builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
+}
+
 builder.Services.AddScoped<DailySummaryService>();
 builder.Services.AddScoped<AttachmentSummaryService>();
 

@@ -10,15 +10,19 @@ namespace KeepApi.Data.Seed
         public static async Task SeedAsync(KeepDbContext context, IAppSettingsCrypto crypto)
         {
             var recordCount = await context.AppSettings.CountAsync();
-            if (recordCount > 0) // Sadece tablo boşsa çalış
+            if (recordCount > 0) // Sadece tablo boşsa çalış // Eklenmesi gereken tekil kayıtlar varsa bir alt satıra alınabilir, altında olmayanları ekleme filtresi var
                 return;
 
             var settings = new List<AppSetting>
-            {
+            {/// UPDATE APP_SETTINGS SET SETTING_VALUE = 'openai' WHERE SETTING_KEY = 'Llm:Provider' AND TARGET_PROJECT = 'KeepApi';
                 Plain("Llm:Provider", "gemini", "LLM provider", "KeepApi"),
                 Plain("Llm:Model", "gemini-3.6-flash", "LLM model", "KeepApi"),
                 Plain("Llm:BaseUrl", "https://generativelanguage.googleapis.com/v1beta", "LLM base url", "KeepApi"),
                 Secret("Llm:ApiKey", "AQ.Ab8RN6JjnK_QtxuedMdAr-UBh7WT8nlNiRh2Yx11O1PpU7mXbA", "LLM API key", "KeepApi", crypto),
+
+                Plain("Llm:OpenAI:Model", "gpt-4o-mini", "OpenAI (ChatGPT) model", "KeepApi"),
+                Plain("Llm:OpenAI:BaseUrl", "https://api.openai.com/v1", "OpenAI base url", "KeepApi"),
+                Secret("Llm:OpenAI:ApiKey", "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", "ChatGpt API Key", "KeepApi", crypto),
 
                 Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
                 Plain("Cors:AllowedOrigin", "http://localhost:5173", "React frontend url", "KeepApi"),
@@ -46,7 +50,20 @@ namespace KeepApi.Data.Seed
                 Plain("Smtp:EnableSsl", "true", "SMTP enable SSL", "KeepApi")
             };
 
-            context.AppSettings.AddRange(settings);
+            var existingKeys = (await context.AppSettings
+                .Select(s => new { s.Key, s.TargetProject })
+                .ToListAsync())
+                .Select(s => (s.Key, s.TargetProject))
+                .ToHashSet();
+
+            var missingKeys = settings
+                .Where(s => !existingKeys.Contains((s.Key, s.TargetProject)))
+                .ToList();
+
+            if (missingKeys.Count == 0)
+                return;
+
+            context.AppSettings.AddRange(missingKeys);
             await context.SaveChangesAsync();
         }
 

@@ -160,6 +160,31 @@ export async function fetchSearchNotes() {
     return res.json()
 }
 
+// Dosya (görsel/PDF/txt) yükler, LLM özetini { title, content } olarak döner.
+// Not: bu çağrı notu OLUŞTURMAZ, sadece özet üretir; oluşturmak için createNote çağrılmalı.
+export async function summarizeAttachment(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await apiFetch(`${NOTES_BASE_URL}/attachments/summarize`, {
+        method: 'POST',
+        body: formData,
+    })
+
+    if (!res.ok) {
+        let message = 'Dosya özetlenemedi.'
+        try {
+            const body = await res.json()
+            message = body?.message || message
+        } catch {
+            // body yok/parse edilemedi
+        }
+        throw new Error(message)
+    }
+
+    return res.json()
+}
+
 export async function createNote(note) {
     const res = await apiFetch(NOTES_BASE_URL, {
         method: 'POST',

@@ -38,14 +38,10 @@ namespace KeepApi.Services
 
                 var since = DateTime.UtcNow.AddHours(-24);
 
-                var raw = await _context.Notes
-                .Where(n => n.UserId == userId)
-                .Select(n => new { n.Id, n.IsDeleted, n.IsDailySummary, n.Pinned, n.Archived, n.Checklist, n.ImageAdded })
-                .ToListAsync(ct);
-
-                var test = await _context.Notes
-                .Where(n => n.UserId == userId)
-                .ToListAsync(ct);
+                //var raw = await _context.Notes
+                //.Where(n => n.UserId == userId)
+                //.Select(n => new { n.Id, n.IsDeleted, n.IsDailySummary, n.Pinned, n.Archived, n.Checklist, n.ImageAdded })
+                //.ToListAsync(ct);
 
                 var recentNotes = await _context.Notes
                 .Where(n => n.UserId == userId)
