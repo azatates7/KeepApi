@@ -24,6 +24,9 @@ namespace KeepApi.Data.Seed
                 Plain("Llm:OpenAI:BaseUrl", "https://api.openai.com/v1", "OpenAI base url", "KeepApi"),
                 Secret("Llm:OpenAI:ApiKey", "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", "ChatGpt API Key", "KeepApi", crypto),
 
+                Plain("Llm:Ollama:BaseUrl", "http://localhost:11434/v1", "Ollama base url", "KeepApi"),
+                Plain("Llm:Ollama:Model", "gemma4:e4b", "Ollama text/vision model (natively multimodal)", "KeepApi"),
+
                 Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
                 Plain("Cors:AllowedOrigin", "http://localhost:5173", "React frontend url", "KeepApi"),
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),

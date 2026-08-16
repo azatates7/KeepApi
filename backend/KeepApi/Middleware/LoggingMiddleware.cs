@@ -44,6 +44,11 @@ public class LoggingMiddleware
     public async Task Invoke(HttpContext context)
     {
         var request = context.Request;
+        if (request.HasFormContentType && request.ContentType?.Contains("multipart/", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await _next(context);
+            return;
+        }
 
         request.EnableBuffering();
 
