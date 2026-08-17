@@ -161,7 +161,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 //builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
 // Llm:Provider ayarına göre "gemini" veya "openai" istemcisi kaydedilir.
 // DailySummaryService yalnızca ILlmClient'a bağımlı olduğu için provider değişimi bu tek yeri etkiler.
-var llmProvider = "ollama";// builder.Configuration["Llm:Provider"] ?? "gemini";
+var llmProvider = "groq";// builder.Configuration["Llm:Provider"] ?? "gemini";
 
 if (string.Equals(llmProvider, "openai", StringComparison.OrdinalIgnoreCase))
 {
@@ -171,8 +171,12 @@ else if (string.Equals(llmProvider, "ollama", StringComparison.OrdinalIgnoreCase
 {
     builder.Services.AddHttpClient<ILlmClient, OllamaLlmClient>(client =>
     {
-        client.Timeout = TimeSpan.FromMinutes(3); // yerel model CPU'da yavaş olabilir
+        client.Timeout = TimeSpan.FromMinutes(3);
     });
+}
+else if (string.Equals(llmProvider, "groq", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddHttpClient<ILlmClient, GroqLlmClient>();
 }
 else
 {

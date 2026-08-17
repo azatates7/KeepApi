@@ -27,6 +27,11 @@ namespace KeepApi.Data.Seed
                 Plain("Llm:Ollama:BaseUrl", "http://localhost:11434/v1", "Ollama base url", "KeepApi"),
                 Plain("Llm:Ollama:Model", "gemma4:e4b", "Ollama text/vision model (natively multimodal)", "KeepApi"),
 
+                Plain("Llm:Groq:BaseUrl", "https://api.groq.com/openai/v1", "Groq base url", "KeepApi"),
+                Plain("Llm:Groq:Model", "openai/gpt-oss-20b", "Groq text model", "KeepApi"),
+                Plain("Llm:Groq:VisionModel", "qwen/qwen3.6-27b", "Groq vision model (preview - Groq model sayfasından teyit et)", "KeepApi"),
+                Secret("Llm:Groq:ApiKey", "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", "Groq API Key", "KeepApi", crypto),
+
                 Plain("Redis:ConnectionString", "localhost:6379", "Redis connection url", "KeepApi"),
                 Plain("Cors:AllowedOrigin", "http://localhost:5173", "React frontend url", "KeepApi"),
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),

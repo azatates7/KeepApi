@@ -101,6 +101,13 @@ namespace KeepApi.Infrastructure.Llm
                 model,
                 messages,
                 stream = false
+                //options = new
+                //{
+                //    num_predict = 500,   // maksimum üretilecek token — özet için fazlasıyla yeterli
+                //    num_ctx = 4096,        // context penceresini gereksiz büyütme, işlem hızını artırır
+                //    maxChars = 6_000,
+                //    think = false
+                //}
             });
 
             try
@@ -126,7 +133,7 @@ namespace KeepApi.Infrastructure.Llm
             }
             catch(Exception exception)
             {
-                return exception.StackTrace.ToString();
+                return exception?.StackTrace?.ToString() ?? string.Empty;
             }
 
             return string.Empty;
