@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using KeepApi.Data.Configurations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
@@ -17,8 +18,7 @@ namespace KeepApi.Data.Context
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = configuration.GetConnectionString("OracleConnection");
-
+            var connectionString = OracleConnectionStringResolver.Resolve(configuration);
             var optionsBuilder = new DbContextOptionsBuilder<KeepDbContext>();
 
             optionsBuilder.UseOracle(connectionString)
