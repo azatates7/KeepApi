@@ -25,6 +25,8 @@ namespace KeepApi.Data.Context
             builder.ApplyConfigurationsFromAssembly(typeof(KeepDbContext).Assembly);
 
             base.OnModelCreating(builder);
+
+            // Oracle genel düzeltme // Oracle da bool yok // Oracle yerine farklı DB kullanılmışsa burası da değişmeli.
             foreach (var entityType in builder.Model.GetEntityTypes())
             {
                 foreach (var property in entityType.GetProperties())

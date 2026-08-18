@@ -17,6 +17,14 @@ namespace KeepApi.Infrastructure.Authentication.Services
     {
         private static readonly TimeSpan ResetCodeTtl = TimeSpan.FromMinutes(10);
 
+        // İki kademeli hesap kilitleme: her 3 başarısız denemede bir 5 dk geçici kilit,
+        // toplam 10 başarısız denemede kalıcı kilit (şifre sıfırlama/değişimiyle açılır).
+        // AccessFailedCount/LockoutEnd, ASP.NET Identity'nin AspNetUsers tablosunda
+        // zaten DB'de tutuluyor — ayrı bir kolon/tablo gerekmiyor.
+        private const int TempLockEveryNFailures = 3;
+        private static readonly TimeSpan TempLockDuration = TimeSpan.FromMinutes(5);
+        private const int PermanentLockThreshold = 10;
+
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IJwtService _jwtService;
         private readonly JwtSettings _jwtSettings;
@@ -55,6 +63,13 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             if (await _userManager.IsLockedOutAsync(user))
             {
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                if (lockoutEnd == DateTimeOffset.MaxValue)
+                {
+                    throw new UnauthorizedAccessException(
+                        "Hesap çok sayıda hatalı deneme nedeniyle kilitlendi. Şifrenizi sıfırlamanız gerekiyor.");
+                }
+
                 throw new UnauthorizedAccessException("Hesap kilitli. Lütfen daha sonra tekrar deneyin.");
             }
 
@@ -62,7 +77,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             if (!passwordValid)
             {
-                await _userManager.AccessFailedAsync(user);
+                await RegisterFailedLoginAttemptAsync(user);
                 throw new UnauthorizedAccessException("Kullanıcı adı/e-posta veya şifre hatalı.");
             }
 
@@ -87,6 +102,37 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 Token = token,
                 ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes)
             };
+        }
+
+        /// <summary>
+        /// Başarısız girişi DB'ye (AspNetUsers.AccessFailedCount) işler ve iki kademeli
+        /// kilitleme uygular: her 3 denemede bir 5 dk geçici kilit, toplamda 10 denemede
+        /// kalıcı kilit (DateTimeOffset.MaxValue) — bu sadece ResetPasswordAsync (veya
+        /// ileride eklenecek bir şifre değiştirme akışı) ile kaldırılır.
+        /// Identity'nin varsayılan AccessFailedAsync'i kilitlendiğinde sayacı sıfırladığı
+        /// için burada bilerek kullanılmadı — 10'a kadar kümülatif sayım gerekiyor.
+        /// </summary>
+        private async Task RegisterFailedLoginAttemptAsync(ApplicationUser user)
+        {
+            // Increment the failed count via AccessFailedAsync, then read the current count.
+            var accessFailedResult = await _userManager.AccessFailedAsync(user);
+            if (!accessFailedResult.Succeeded)
+            {
+                _logger.LogWarning("AccessFailedAsync failed for user {UserId}.", user.Id);
+            }
+
+            var failedCount = await _userManager.GetAccessFailedCountAsync(user);
+
+            if (failedCount >= PermanentLockThreshold)
+            {
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+                _logger.LogWarning("Kullanıcı {UserId} {FailedCount} başarısız denemeden sonra kalıcı olarak kilitlendi.", user.Id, failedCount);
+            }
+            else if (failedCount % TempLockEveryNFailures == 0)
+            {
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.Add(TempLockDuration));
+                _logger.LogInformation("Kullanıcı {UserId} {FailedCount} başarısız denemeden sonra {Minutes} dk kilitlendi.", user.Id, failedCount, TempLockDuration.TotalMinutes);
+            }
         }
 
         public async Task<LoginResponse> ExternalLoginAsync(string provider, ExternalLoginRequest request)
@@ -381,6 +427,13 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, resetToken, request.NewPassword);
+
+            if (result.Succeeded)
+            {
+                // Şifre sıfırlandığında hem geçici hem kalıcı kilit kaldırılır, sayaç sıfırlanır.
+                await _userManager.SetLockoutEndDateAsync(user, null);
+                await _userManager.ResetAccessFailedCountAsync(user);
+            }
 
             if (!result.Succeeded)
             {

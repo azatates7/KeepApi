@@ -1,13 +1,14 @@
 using KeepApi.Application.Interfaces;
 using KeepApi.Common;
 using KeepApi.Common.Security;
+using KeepApi.Data.Configurations;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Data.Extensions;
 using KeepApi.Data.Seed;
 using KeepApi.Infrastructure.Authentication.Extensions;
 using KeepApi.Infrastructure.Authentication.Services;
-using KeepApi.Infrastructure.Configuration;
+using KeepApi.Infrastructure.Configurations;
 using KeepApi.Infrastructure.Llm;
 using KeepApi.Jobs;
 using KeepApi.Middleware;
@@ -21,8 +22,16 @@ using Serilog;
 using Serilog.Events;
 using StackExchange.Redis;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Connection string çözümü (env var / Windows Credential Manager) KeepApi.Data'da yaşıyor —
+// API projesi ConnectionString'in NEREDEN geldiğini bilmiyor, sadece sonucu kullanıyor.
+// Configuration'a geri yazılıyor ki hem builder.Services.AddKeepData hem de aşağıdaki
+// DbSettingsConfigurationSource aynı, doğru çözülmüş değeri görsün.
+var oracleConnectionString = OracleConnectionStringResolver.Resolve(builder.Configuration);
+builder.Configuration["ConnectionStrings:OracleConnection"] = oracleConnectionString;
 
 //Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg)); // Debug Serilog errors
 //Log.Logger = new LoggerConfiguration()
@@ -42,7 +51,7 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
-builder.Services.AddScoped<NoteService>(); 
+builder.Services.AddScoped<NoteService>();
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
@@ -101,6 +110,26 @@ builder.Services.AddCors(options => // React policy allow
     });
 });
 
+// IP bazlı rate limiting: login zaten AuthService içinde DB'ye işlenen (AccessFailedCount)
+// iki kademeli hesap kilitlemesine sahip; ancak register/forgot-password/verify-email gibi
+// "doğru cevabı tahmin etme" mantığı olmayan endpoint'lerde hesap bazlı bir sayaç anlamsız —
+// buralarda kaynak IP başına sabit pencereli bir limit uygulanır.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("auth-strict", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,                       // pencere başına izin verilen istek
+                Window = TimeSpan.FromMinutes(15),      // pencere süresi
+                QueueLimit = 0,                         // limit dolunca kuyruğa alma, doğrudan 429 dön
+                AutoReplenishment = true
+            }));
+});
+
 builder.Services.AddKeepData(builder.Configuration);
 
 builder.Services
@@ -118,6 +147,12 @@ builder.Services
 
     options.Password.RequireNonAlphanumeric = false;
 
+    // NOT: MaxFailedAccessAttempts/DefaultLockoutTimeSpan artık kullanılmıyor —
+    // AuthService.LoginAsync kendi iki kademeli kilit mantığını (3 denemede 5 dk,
+    // 10 denemede kalıcı) IncrementAccessFailedCountAsync/SetLockoutEndDateAsync ile
+    // manuel yönetiyor. AllowedForNewUsers=true olduğu sürece bu ayarların değeri
+    // IsLockedOutAsync tarafından kullanılmıyor, sadece Identity'nin varsayılan
+    // AccessFailedAsync çağrılırsa (şu an çağrılmıyor) devreye girer.
     options.Lockout.MaxFailedAccessAttempts = 5;
 
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -128,8 +163,7 @@ builder.Services
 .AddDefaultTokenProviders();
 
 // --- DB'den ayarları yükle (bootstrap aşaması, DI container henüz yok) ---
-var bootstrapConnectionString = builder.Configuration.GetConnectionString("OracleConnection")
-    ?? throw new InvalidOperationException("OracleConnection appsettings.json içinde tanımlı olmalı.");
+// oracleConnectionString yukarıda (builder oluşturulur oluşturulmaz) zaten çözüldü.
 
 var keyRingPath = builder.Configuration["DataProtection:KeyPath"] ?? @"C:\dp-keys";
 var bootstrapProtectionProvider = DataProtectionProvider.Create(
@@ -137,7 +171,7 @@ var bootstrapProtectionProvider = DataProtectionProvider.Create(
     opts => opts.SetApplicationName("KeepApi"));
 
 IConfigurationBuilder configBuilder = builder.Configuration;
-configBuilder.Add(new DbSettingsConfigurationSource(bootstrapConnectionString, "KeepApi", bootstrapProtectionProvider));
+configBuilder.Add(new DbSettingsConfigurationSource(oracleConnectionString, "KeepApi", bootstrapProtectionProvider));
 
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
@@ -159,9 +193,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
 });
 
 //builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
-// Llm:Provider ayarına göre "gemini" veya "openai" istemcisi kaydedilir.
-// DailySummaryService yalnızca ILlmClient'a bağımlı olduğu için provider değişimi bu tek yeri etkiler.
-var llmProvider = "groq";// builder.Configuration["Llm:Provider"] ?? "gemini";
+// Llm:Provider ayarına göre "gemini", "openai", "ollama" veya "groq" istemcisi kaydedilir.
+// DailySummaryService yalnızca ILlmClient'a bağımlı olduğu için provider
+// değişimi bu tek yeri etkiler.
+var llmProvider = builder.Configuration["Llm:Provider"] ?? "gemini";
 
 if (string.Equals(llmProvider, "openai", StringComparison.OrdinalIgnoreCase))
 {
@@ -171,7 +206,7 @@ else if (string.Equals(llmProvider, "ollama", StringComparison.OrdinalIgnoreCase
 {
     builder.Services.AddHttpClient<ILlmClient, OllamaLlmClient>(client =>
     {
-        client.Timeout = TimeSpan.FromMinutes(3);
+        client.Timeout = TimeSpan.FromMinutes(3); // yerel model CPU'da yavaş olabilir
     });
 }
 else if (string.Equals(llmProvider, "groq", StringComparison.OrdinalIgnoreCase))
@@ -214,7 +249,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = 
+        var context =
             services.GetRequiredService<KeepDbContext>();
 
         await context.Database.MigrateAsync(); // Seeder'lardan önce şema oluşturulmalı
@@ -241,6 +276,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter();
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseMiddleware<LoggingMiddleware>();

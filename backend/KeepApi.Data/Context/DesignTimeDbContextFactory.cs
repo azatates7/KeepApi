@@ -21,10 +21,6 @@ namespace KeepApi.Data.Context
 
             var optionsBuilder = new DbContextOptionsBuilder<KeepDbContext>();
 
-            //optionsBuilder.UseOracle(
-            //    "User Id=SYSTEM;Password=oRaclePassWord43;Data Source=localhost:1521/xe")
-            //     .EnableDetailedErrors();
-
             optionsBuilder.UseOracle(connectionString)
                  .EnableDetailedErrors();
 

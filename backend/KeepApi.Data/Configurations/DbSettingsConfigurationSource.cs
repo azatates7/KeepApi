@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 
-namespace KeepApi.Infrastructure.Configuration
+namespace KeepApi.Infrastructure.Configurations
 {
     public class DbSettingsConfigurationSource : IConfigurationSource
     {

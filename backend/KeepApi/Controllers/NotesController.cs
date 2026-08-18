@@ -59,11 +59,19 @@ namespace KeepApi.Controllers
 
             using var memoryStrean = new MemoryStream();
             await file.CopyToAsync(memoryStrean, cancellationToken);
+            var fileBytes = memoryStrean.ToArray();
+
+            // Content-Type header'ı istemci tarafından belirlenir ve sahtelenebilir;
+            // dosyanın gerçek baytları da bildirilen türle uyuşuyor mu kontrol edilir.
+            if (!FileSignatureValidator.MatchesClaimedType(fileBytes, file.ContentType))
+            {
+                return BadRequest(new { message = "Dosya içeriği, bildirilen dosya türüyle uyuşmuyor." });
+            }
 
             try
             {
                 var result = await _attachmentSummaryService.SummarizeAsync(
-                    memoryStrean.ToArray(), file.ContentType, file.FileName, cancellationToken);
+                    fileBytes, file.ContentType, file.FileName, cancellationToken);
 
                 return Ok(result);
             }

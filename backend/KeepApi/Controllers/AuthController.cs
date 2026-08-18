@@ -6,6 +6,7 @@ using KeepApi.Application.Models.Response.Auth;
 using KeepApi.Common.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace KeepApi.Controllers
 {
@@ -73,6 +74,7 @@ namespace KeepApi.Controllers
         /// <response code="400">Kayıt bilgileri geçersiz.</response>
         [HttpPost("register")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth-strict")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<object>>> Register([FromBody] RegisterRequest request)
@@ -93,6 +95,7 @@ namespace KeepApi.Controllers
         /// <response code="400">Kod hatalı veya süresi dolmuş.</response>
         [HttpPost("verify-email")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth-strict")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<object>>> VerifyEmail([FromBody] VerifyEmailRequest request)
@@ -113,6 +116,7 @@ namespace KeepApi.Controllers
         /// <response code="200">İstek işlendi (e-posta kayıtlıysa kod gönderildi).</response>
         [HttpPost("forgot-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth-strict")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<object>>> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
@@ -125,6 +129,7 @@ namespace KeepApi.Controllers
         /// <response code="400">Kod hatalı/süresi dolmuş veya şifreler eşleşmiyor.</response>
         [HttpPost("reset-password")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth-strict")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<object>>> ResetPassword([FromBody] ResetPasswordRequest request)
