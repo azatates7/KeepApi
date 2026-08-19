@@ -36,7 +36,7 @@ namespace KeepApi.Services
 
                 var lang = user?.PreferredLanguage == "en" ? "en" : "tr";
 
-                var since = DateTime.UtcNow.AddHours(-24);
+                var since = DateTime.Now.AddHours(-24);
 
                 //var raw = await _context.Notes
                 //.Where(n => n.UserId == userId)

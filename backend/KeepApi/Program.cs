@@ -228,7 +228,7 @@ builder.Services.AddQuartz(q =>
     q.AddTrigger(opts => opts
         .ForJob(jobKey)
         .WithIdentity("DailySummaryJob-trigger")
-        .WithCronSchedule("0 0 8 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"))));
+        .WithCronSchedule("0 57 16 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"))));
     // Linux container'da "Turkey Standard Time" bulunamazsa "Europe/Istanbul" kullanılmalı
 });
 builder.Services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);

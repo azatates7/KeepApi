@@ -309,7 +309,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 "Bu kaydı siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.");
         }
 
-        private async Task<string> CheckPasswordIsValid(string password)
+        private static async Task<string> CheckPasswordIsValid(string password)
         {
             var resultString = string.Empty;
             if (string.IsNullOrWhiteSpace(password))

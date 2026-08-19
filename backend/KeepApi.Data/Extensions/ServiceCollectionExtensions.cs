@@ -13,11 +13,6 @@ namespace KeepApi.Data.Extensions
             IConfiguration configuration)
         {
             var connectionString = configuration["ConnectionStrings:OracleConnection"];
-            //services.AddDbContext<KeepDbContext>(options =>
-            //{
-            //    options.UseOracle(connectionString)
-            //       .EnableDetailedErrors();
-            //});
 
             services.AddScoped<AuditInterceptor>();
 
