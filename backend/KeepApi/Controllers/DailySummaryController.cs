@@ -41,10 +41,24 @@ namespace KeepApi.Controllers
         int take = 30,
         CancellationToken cancellationToken = default)
         {
-            var history = await context.DailySummaryHistories
-                .Where(h => h.UserId == _currentUser.UserId)
-                .OrderByDescending(h => h.GeneratedAt)
+            var history = await context.JobHistories
+                .Where(h =>
+                    h.Username == _currentUser.Username &&
+                    h.JobTypeId == 1 &&
+                    !h.IsDeleted)
+                .OrderByDescending(h => h.StartedAt)
                 .Take(take)
+                .Select(h => new
+                {
+                    h.Id,
+                    h.TransactionId,
+                    h.JobTypeId,
+                    h.Username,
+                    h.StartedAt,
+                    h.CompletedAt,
+                    h.Status,
+                    h.ErrorMessage
+                })
                 .ToListAsync(cancellationToken);
 
             return Ok(history);

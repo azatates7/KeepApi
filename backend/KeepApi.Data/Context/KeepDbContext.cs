@@ -20,6 +20,8 @@ namespace KeepApi.Data.Context
         public DbSet<AppSetting> AppSettings { get; set; }
         public DbSet<DailySummaryHistory> DailySummaryHistories { get; set; }
 
+        public DbSet<JobDefinition> JobDefinitions { get; set; }
+        public DbSet<JobHistory> JobHistories { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(KeepDbContext).Assembly);

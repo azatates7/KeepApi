@@ -25,44 +25,55 @@ namespace KeepApi.Services
             _logger = logger;
         }
 
-        public async Task GenerateForUserAsync(Guid userId, CancellationToken ct)
+        public async Task GenerateForUserAsync(
+            Guid userId,
+            CancellationToken ct)
         {
             try
             {
                 var user = await _context.Users
                     .Where(u => u.Id == userId)
-                    .Select(u => new { u.PreferredLanguage })
+                    .Select(u => new
+                    {
+                        u.PreferredLanguage
+                    })
                     .FirstOrDefaultAsync(ct);
 
-                var lang = user?.PreferredLanguage == "en" ? "en" : "tr";
+                var lang = user?.PreferredLanguage == "en"
+                    ? "en"
+                    : "tr";
 
-                var since = DateTime.Now.AddHours(-24);
-
-                //var raw = await _context.Notes
-                //.Where(n => n.UserId == userId)
-                //.Select(n => new { n.Id, n.IsDeleted, n.IsDailySummary, n.Pinned, n.Archived, n.Checklist, n.ImageAdded })
-                //.ToListAsync(ct);
+                var since = DateTime.UtcNow.AddHours(-24);
 
                 var recentNotes = await _context.Notes
-                .Where(n => n.UserId == userId)
-                .Where(n => n.IsDeleted == false)
-                .Where(n => n.IsDailySummary == false)
-                .Where(n => (n.UpdatedAt ?? n.CreatedAt) >= since)
-                .OrderBy(n => n.CreatedAt)
-                .ToListAsync(ct);
+                    .Where(n => n.UserId == userId)
+                    .Where(n => !n.IsDeleted)
+                    .Where(n => !n.IsDailySummary)
+                    .Where(n => (n.UpdatedAt ?? n.CreatedAt) >= since)
+                    .OrderBy(n => n.CreatedAt)
+                    .ToListAsync(ct);
 
                 var existingSummaryNote = await _context.Notes
-                    .FirstOrDefaultAsync(n => n.UserId == userId && n.IsDailySummary, ct);
+                    .FirstOrDefaultAsync(
+                        n =>
+                            n.UserId == userId &&
+                            n.IsDailySummary &&
+                            !n.IsDeleted,
+                        ct);
 
-                // Sadece "yeni not yok VE özet notu zaten var" durumunda atla.
-                // Özet notu hiç yoksa (ilk çalıştırma), not olmasa bile oluştur.
-                if (recentNotes.Count == 0 && existingSummaryNote is not null)
+                // Yeni not yok ve daha önce oluşturulmuş, bir özet varsa herhangi bir işlem yapma.
+                if (recentNotes.Count == 0 &&
+                    existingSummaryNote is not null)
                 {
-                    _logger.LogInformation("Kullanıcı {UserId} için yeni not yok, mevcut özet korunuyor.", userId);
+                    _logger.LogInformation(
+                        "Kullanıcı {UserId} için yeni not yok, mevcut özet korunuyor.",
+                        userId);
+
                     return;
                 }
 
                 string summaryText;
+
                 if (recentNotes.Count == 0)
                 {
                     summaryText = lang == "en"
@@ -72,14 +83,22 @@ namespace KeepApi.Services
                 else
                 {
                     var notesText = lang == "en"
-                        ? string.Join("\n---\n", recentNotes.Select(n => $"Title: {n.Title}\nContent: {n.Content}"))
-                        : string.Join("\n---\n", recentNotes.Select(n => $"Başlık: {n.Title}\nİçerik: {n.Content}"));
+                        ? string.Join(
+                            "\n---\n",
+                            recentNotes.Select(n =>
+                                $"Title: {n.Title}\nContent: {n.Content}"))
+                        : string.Join(
+                            "\n---\n",
+                            recentNotes.Select(n =>
+                                $"Başlık: {n.Title}\nİçerik: {n.Content}"));
 
                     var prompt = lang == "en"
                         ? $"Summarize the following notes into a single short daily summary paragraph, in English:\n\n{notesText}"
                         : $"Aşağıdaki notları tek bir günlük özet paragrafı halinde, Türkçe ve kısa şekilde özetle:\n\n{notesText}";
 
-                    summaryText = await _llm.SummarizeAsync(prompt, ct);
+                    summaryText = await _llm.SummarizeAsync(
+                        prompt,
+                        ct);
                 }
 
                 if (existingSummaryNote is null)
@@ -92,6 +111,7 @@ namespace KeepApi.Services
                         IsDailySummary = true,
                         Color = "default"
                     };
+
                     _context.Notes.Add(existingSummaryNote);
                 }
                 else
@@ -100,25 +120,36 @@ namespace KeepApi.Services
                 }
 
                 existingSummaryNote.Title = lang == "en"
-                    ? $"Daily Summary - {DateTime.Now:dd.MM.yyyy}"
-                    : $"Günlük Özet - {DateTime.Now:dd.MM.yyyy}";
+                    ? $"Daily Summary - {DateTime.UtcNow:dd.MM.yyyy}"
+                    : $"Günlük Özet - {DateTime.UtcNow:dd.MM.yyyy}";
+
                 existingSummaryNote.Content = summaryText;
 
-                _context.DailySummaryHistories.Add(new DailySummaryHistory
-                {
-                    UserId = userId,
-                    Content = summaryText,
-                    GeneratedAt = DateTime.UtcNow
-                });
-
                 await _context.SaveChangesAsync(ct);
-                await _redis.KeyDeleteAsync($"notes:user:{userId}");
 
-                _logger.LogInformation("Kullanıcı {UserId} için özet güncellendi, geçmişe eklendi.", userId);
+                await _redis.KeyDeleteAsync(
+                    $"notes:user:{userId}");
+
+                _logger.LogInformation(
+                    "Kullanıcı {UserId} için günlük özet başarıyla güncellendi.",
+                    userId);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation(
+                    "Kullanıcı {UserId} için günlük özet işlemi iptal edildi.",
+                    userId);
+
+                throw;
             }
             catch (Exception exception)
             {
-                _logger.LogError($"Çalışma sırasında hata alındı. Hata => {exception.Message} Detay => {exception.StackTrace}");
+                _logger.LogError(
+                    exception,
+                    "Kullanıcı {UserId} için günlük özet oluşturulurken hata oluştu.",
+                    userId);
+
+                throw;
             }
         }
     }

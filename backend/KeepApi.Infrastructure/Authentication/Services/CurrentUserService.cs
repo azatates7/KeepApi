@@ -8,10 +8,17 @@ namespace KeepApi.Infrastructure.Authentication.Services
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CurrentUserService(IHttpContextAccessor httpContextAccessor)
+        public CurrentUserService(
+            IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
         }
+
+        public bool IsAuthenticated =>
+            _httpContextAccessor.HttpContext?
+                .User
+                .Identity?
+                .IsAuthenticated == true;
 
         public Guid UserId
         {
@@ -21,7 +28,27 @@ namespace KeepApi.Infrastructure.Authentication.Services
                     .User
                     .FindFirstValue(ClaimTypes.NameIdentifier);
 
-                return Guid.Parse(userId!);
+                if (Guid.TryParse(userId, out var result))
+                {
+                    return result;
+                }
+
+                throw new InvalidOperationException("Current user does not have a valid UserId.");
+            }
+        }
+
+        public string? Username
+        {
+            get
+            {
+                var user = _httpContextAccessor.HttpContext?.User;
+
+                if (user?.Identity?.IsAuthenticated != true)
+                    return null;
+
+                return user.FindFirstValue(ClaimTypes.Name)
+                       ?? user.FindFirstValue("preferred_username")
+                       ?? user.FindFirstValue(ClaimTypes.Email);
             }
         }
     }
