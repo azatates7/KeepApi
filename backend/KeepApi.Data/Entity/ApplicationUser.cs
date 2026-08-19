@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore.Migrations;
-using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KeepApi.Data.Entity
