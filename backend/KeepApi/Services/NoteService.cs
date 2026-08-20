@@ -1,4 +1,5 @@
 using KeepApi.Application.Interfaces;
+using KeepApi.Common.Extensions;
 using KeepApi.Data.Context;
 using KeepApi.Data.Entity;
 using KeepApi.Models.Request.Note;
@@ -54,9 +55,10 @@ public class NoteService
 
     public async Task<List<Note>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var results = await GetNotesWithRedisControl(cancellationToken);
-
-        _logger.LogInformation("All notes have been read.");
+        var results = await _context.Notes
+                            .AsNoTracking()
+                            .OrderByDescending(x => x.CreatedAt)
+                            .ToListAsync(cancellationToken);
 
         return results;
     }
@@ -119,7 +121,7 @@ public class NoteService
                 Color = request.Color,
                 Checklist = request.Checklist,
                 ImageAdded = request.ImageAdded,
-                ImageUrl = request.ImageAdded ? request.ImageUrl?.Substring(0, 200) : null,
+                ImageUrl = request.ImageAdded ? request.ImageUrl.Truncate(200) : null,
                 UserId = currentUserId,
                 CreatedById = currentUserId,
             };
@@ -157,7 +159,9 @@ public class NoteService
 
             var existing = await _context.Notes.FirstOrDefaultAsync(x => x.UserId == currentUserId && x.Id == id, cancellationToken);
             if (existing is null)
+            {
                 return null;
+            }
 
             existing.Title = request.Title;
             existing.Content = request.Content;

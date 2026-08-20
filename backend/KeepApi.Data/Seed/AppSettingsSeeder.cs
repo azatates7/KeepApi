@@ -52,9 +52,9 @@ namespace KeepApi.Data.Seed
 
                 Plain("Smtp:Host", "smtp.gmail.com", "SMTP host", "KeepApi"),
                 Plain("Smtp:Port", "587", "SMTP port", "KeepApi"),
-                Plain("Smtp:User", "azatates4977@gmail.com", "SMTP user", "KeepApi"),
-                Secret("Smtp:Password", "palf nwuh qctu mnyz", "Gmail app password", "KeepApi", crypto),
-                Plain("Smtp:From", "azatates4977@gmail.com", "SMTP from", "KeepApi"),
+                Plain("Smtp:User", "***************@gmail.com", "SMTP user", "KeepApi"),
+                Secret("Smtp:Password", "***************", "Gmail app password", "KeepApi", crypto),
+                Plain("Smtp:From", "***************@gmail.com", "SMTP from", "KeepApi"),
                 Plain("Smtp:EnableSsl", "true", "SMTP enable SSL", "KeepApi")
             };
 

@@ -165,6 +165,26 @@ namespace KeepApi.Controllers
             return Ok(ApiResponse<UserDto>.Ok(user));
         }
 
+        [HttpPut("me/language")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<object>>> UpdateLanguage([FromBody] UpdateLanguageRequest request)
+        {
+            var userId = GetCurrentUserId();
+            if (userId is null)
+            {
+                return Unauthorized(ApiResponse<object>.Fail("Token içinde kullanıcı bilgisi bulunamadı."));
+            }
+            try
+            {
+                await _authService.UpdateLanguageAsync(userId.Value, request.Language);
+                return Ok(ApiResponse<object>.Ok(new { }, "Dil güncellendi."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
         [HttpGet("test")]
         [AllowAnonymous]
         public IActionResult Test()

@@ -129,6 +129,7 @@ namespace KeepApi.Controllers
         /// <response code="201">Not oluşturuldu, Location header'ı yeni kaydın adresini gösterir.</response>
         [HttpPost]
         [ProducesResponseType(typeof(Note), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Note>> Create([FromBody] CreateNoteRequest request, CancellationToken cancellationToken = default)
         {
             var created = await _noteService.CreateAsync(request, cancellationToken);
@@ -142,6 +143,7 @@ namespace KeepApi.Controllers
         /// <response code="404">Bu id ile bir not yok.</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(Note), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Note>> Update(string id, [FromBody] UpdateNoteRequest request, CancellationToken cancellationToken = default)
         {
@@ -185,7 +187,6 @@ namespace KeepApi.Controllers
         }
 
         [HttpPost("oracleconnectiontest")]
-        [AllowAnonymous]
         public async Task<IActionResult> TestOracleConnection(CancellationToken cancellationToken = default)
         {
             try
