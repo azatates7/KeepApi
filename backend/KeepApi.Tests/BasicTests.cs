@@ -1,11 +1,14 @@
-﻿namespace KeepApi.Tests
+﻿using NUnit.Framework;
+
+namespace KeepApi.Tests
 {
+    [TestFixture]
     public class BasicTests
     {
-        [Fact]
+        [Test]
         public void WrongTest()
         {
-            Assert.True(false);
+            NUnit.Framework.Assert.That(false, Is.False);
         }
     }
 }
