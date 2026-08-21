@@ -21,10 +21,9 @@ namespace KeepApi.Infrastructure.Notifications
             _logger = logger;
         }
 
-        // Hangfire, hata fırlatan bir job'ı otomatik olarak tekrar dener (varsayılan 10 kez,
-        // artan gecikmeyle). SMTP geçici bir hata verirse gereksiz onlarca denemeyi önlemek
-        // için burada 3'e düşürüyoruz; kalıcı bir hata olursa Dashboard'da "Failed" listesinde görünür.
-        [AutomaticRetry(Attempts = 3)]
+        ///TODO Hangfire Prod Panel kontrol edilmeli. Hata fırlatan job'lar tekrar deneniyor mu, yoksa Failed listesinde mi kalıyor?
+        // Hangfire, hata fırlatan bir job'ı otomatik olarak tekrar dener (varsayılan 10 kez). Tekrar için denetme kapatıldı; kalıcı bir hata olursa Dashboard'da "Failed" listesinde görünür.
+        [AutomaticRetry(Attempts = 0)]
         public async Task NotifyAsync(string userNameOrEmail, string reason, DateTime occurredAt)
         {
             // "Sabit" bildirim adresi — kod içine gömülmek yerine, projenin geri kalanıyla
