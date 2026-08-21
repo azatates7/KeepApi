@@ -1,4 +1,5 @@
-﻿using KeepApi.Application.Interfaces;
+﻿using Hangfire;
+using KeepApi.Application.Interfaces;
 using KeepApi.Application.Models.Common.Auth;
 using KeepApi.Application.Models.Request.Auth;
 using KeepApi.Application.Models.Response.Auth;
@@ -8,6 +9,7 @@ using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Authentication.RefreshTokens;
 using KeepApi.Infrastructure.Email;
+using KeepApi.Infrastructure.Notifications;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -57,58 +59,71 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
-            var user = await _userManager.FindByNameAsync(request.UserNameOrEmail)
-                ?? await _userManager.FindByEmailAsync(request.UserNameOrEmail);
-
-            if (user is null || user.IsDeleted)
+            try
             {
-                throw new UnauthorizedAccessException("Kullanıcı adı/e-posta veya şifre hatalı.");
-            }
+                var user = await _userManager.FindByNameAsync(request.UserNameOrEmail)
+                    ?? await _userManager.FindByEmailAsync(request.UserNameOrEmail);
 
-            if (await _userManager.IsLockedOutAsync(user))
-            {
-                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
-                if (lockoutEnd == DateTimeOffset.MaxValue)
+                if (user is null || user.IsDeleted)
                 {
-                    throw new UnauthorizedAccessException(
-                        "Hesap çok sayıda hatalı deneme nedeniyle kilitlendi. Şifrenizi sıfırlamanız gerekiyor.");
+                    throw new UnauthorizedAccessException("Kullanıcı adı/e-posta veya şifre hatalı.");
                 }
 
-                throw new UnauthorizedAccessException("Hesap kilitli. Lütfen daha sonra tekrar deneyin.");
+                if (await _userManager.IsLockedOutAsync(user))
+                {
+                    var lockoutEnd = await _userManager.GetLockoutEndDateAsync(user);
+                    if (lockoutEnd == DateTimeOffset.MaxValue)
+                    {
+                        throw new UnauthorizedAccessException(
+                            "Hesap çok sayıda hatalı deneme nedeniyle kilitlendi. Şifrenizi sıfırlamanız gerekiyor.");
+                    }
+
+                    throw new UnauthorizedAccessException("Hesap kilitli. Lütfen daha sonra tekrar deneyin.");
+                }
+
+                var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+
+                if (!passwordValid)
+                {
+                    await RegisterFailedLoginAttemptAsync(user);
+                    throw new UnauthorizedAccessException("Kullanıcı adı/e-posta veya şifre hatalı.");
+                }
+
+                await _userManager.ResetAccessFailedCountAsync(user);
+
+                if (!user.EmailConfirmed)
+                {
+                    throw new UnauthorizedAccessException(
+                        "E-posta adresiniz henüz doğrulanmadı. Lütfen e-postanıza gönderilen kodu girin.");
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var token = await _jwtService.GenerateTokenAsync(user);
+                var (refreshToken, refreshExpiresAt) = await _refreshTokenService.IssueAsync(user.Id);
+
+                return new LoginResponse
+                {
+                    UserId = user.Id,
+                    UserName = user.UserName ?? string.Empty,
+                    Email = user.Email ?? string.Empty,
+                    FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                    Roles = roles,
+                    Token = token,
+                    ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes),
+                    RefreshToken = refreshToken,
+                    RefreshTokenExpiresAt = refreshExpiresAt
+                };
             }
-
-            var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-
-            if (!passwordValid)
+            catch (UnauthorizedAccessException ex)
             {
-                await RegisterFailedLoginAttemptAsync(user);
-                throw new UnauthorizedAccessException("Kullanıcı adı/e-posta veya şifre hatalı.");
+                // Tek noktadan yakalama: yukarıdaki dört ayrı "başarısız giriş" senaryosunun
+                // (kullanıcı yok, kilitli, şifre yanlış, e-posta doğrulanmamış) hepsi buraya düşer.
+                // BackgroundJob.Enqueue senkron değil — login isteğinin süresini SMTP'ye bağlamaz,
+                // sadece Hangfire kuyruğuna bir iş bırakır ve hemen devam eder.
+                BackgroundJob.Enqueue<ILoginFailureNotifier>(
+                    x => x.NotifyAsync(request.UserNameOrEmail, ex.Message, DateTime.Now));
+                throw;
             }
-
-            await _userManager.ResetAccessFailedCountAsync(user);
-
-            if (!user.EmailConfirmed)
-            {
-                throw new UnauthorizedAccessException(
-                    "E-posta adresiniz henüz doğrulanmadı. Lütfen e-postanıza gönderilen kodu girin.");
-            }
-
-            var roles = await _userManager.GetRolesAsync(user);
-            var token = await _jwtService.GenerateTokenAsync(user);
-            var (refreshToken, refreshExpiresAt) = await _refreshTokenService.IssueAsync(user.Id);
-
-            return new LoginResponse
-            {
-                UserId = user.Id,
-                UserName = user.UserName ?? string.Empty,
-                Email = user.Email ?? string.Empty,
-                FullName = $"{user.FirstName} {user.LastName}".Trim(),
-                Roles = roles,
-                Token = token,
-                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes),
-                RefreshToken = refreshToken,
-                RefreshTokenExpiresAt = refreshExpiresAt
-            };
         }
 
         /// <summary>

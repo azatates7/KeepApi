@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { login, forgotPassword, resetPassword, setToken } from '../api.js'
+import { login, forgotPassword, resetPassword, setToken, setRefreshToken } from '../api.js'
 import { LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES } from '../i18n.js'
 import AuthLayout from './AuthLayout.jsx'
 import SocialLoginButtons from './SocialLoginButtons.jsx'
@@ -55,6 +55,7 @@ export default function Login({ onLoginSuccess, onNavigateRegister, prefillUsern
         try {
             const result = await login(userNameOrEmail.trim(), password, rememberMe)
             setToken(result.token)
+            setRefreshToken(result.refreshToken)
 
             if (rememberMe) {
                 localStorage.setItem(REMEMBER_ME_KEY, 'true')

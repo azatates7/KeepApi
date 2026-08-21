@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { externalLogin, setToken } from '../api.js'
+import { externalLogin, setToken, setRefreshToken } from '../api.js'
 import { consumeOAuthState, getRedirectUri } from '../OAuthConfig.jsx'
 import { LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES } from '../i18n.js'
 import AuthLayout from './AuthLayout.jsx'
@@ -46,6 +46,7 @@ export default function OAuthCallBack({ onLoginSuccess, onCancel }) {
             try {
                 const result = await externalLogin(provider, code, getRedirectUri())
                 setToken(result.token)
+                setRefreshToken(result.refreshToken)
 
                 if (SUPPORTED_LANGUAGES.includes(result.preferredLanguage)) {
                     i18n.changeLanguage(result.preferredLanguage)

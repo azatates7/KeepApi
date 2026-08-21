@@ -1,3 +1,5 @@
+using Hangfire;
+using Hangfire.Redis.StackExchange;
 using KeepApi.Application.Interfaces;
 using KeepApi.Common;
 using KeepApi.Common.Security;
@@ -192,6 +194,23 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => // Redis
     return ConnectionMultiplexer.Connect(connectionString.Replace(@"http://", string.Empty)); // Burada hata alınırsa Redis aktifleştirilmeli
 });
 
+// Hangfire: Oracle için resmi/bakımlı bir storage provider olmadığından, projede zaten
+// çalışan Redis storage olarak kullanılıyor (aynı Redis:ConnectionString ayarı).
+// Quartz (yukarıda/aşağıda) zamanlı/tekrarlayan job'lar için; Hangfire ise
+// LoginAsync gibi runtime'da tetiklenen fire-and-forget işler için kullanılıyor.
+builder.Services.AddHangfire((sp, config) =>
+{
+    var connectionString = builder.Configuration["Redis:ConnectionString"]
+        ?? throw new InvalidOperationException("Redis:ConnectionString tanımlı değil.");
+
+    config
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseRedisStorage(connectionString.Replace(@"http://", string.Empty));
+});
+builder.Services.AddHangfireServer();
+
 //builder.Services.AddHttpClient<ILlmClient, GeminiLlmClient>();
 // Llm:Provider ayarına göre "gemini", "openai", "ollama" veya "groq" istemcisi kaydedilir.
 // DailySummaryService yalnızca ILlmClient'a bağımlı olduğu için provider
@@ -252,6 +271,12 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Keep Todo API v1");
     });
+
+    // Dashboard sadece Development'ta açık: uygulama JWT bearer auth kullanıyor, ama
+    // dashboard doğrudan tarayıcıdan (Authorization header olmadan) açılan bir sayfa —
+    // JWT'yi buraya taşımanın standart bir yolu yok. Production'da açmak isterseniz IP
+    // allowlist veya ayrı bir Basic Auth authorization filter eklemek gerekir.
+    app.UseHangfireDashboard("/hangfire");
 }
 
 using (var scope = app.Services.CreateScope())

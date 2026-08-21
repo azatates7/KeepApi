@@ -12,6 +12,7 @@ import {
     updateNote,
     getToken,
     clearToken,
+    logout,
     runDailySummary,
 } from './api.js'
 import { useReminders } from './components/useReminders.jsx'
@@ -96,6 +97,7 @@ export default function App() {
 
     function handleLogout() {
         cancelDailySummary()
+        logout() // fire-and-forget: sunucu iptali best-effort, local çıkış onu beklemiyor
         clearToken()
         setNotes([])
         setSearchNotes([])

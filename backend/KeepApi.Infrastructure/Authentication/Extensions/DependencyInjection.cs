@@ -1,15 +1,16 @@
-﻿using System.Text;
-using KeepApi.Application.Interfaces;
+﻿using KeepApi.Application.Interfaces;
 using KeepApi.Infrastructure.Authentication.External;
 using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
 using KeepApi.Infrastructure.Authentication.RefreshTokens;
 using KeepApi.Infrastructure.Authentication.Services;
 using KeepApi.Infrastructure.Email;
+using KeepApi.Infrastructure.Notifications;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace KeepApi.Infrastructure.Authentication.Extensions
 {
@@ -38,6 +39,7 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, SmtpEmailService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            services.AddScoped<ILoginFailureNotifier, LoginFailureNotifier>();
 
             // Google/Microsoft/GitHub authorization code'unu değiştirip
             // sağlayıcının kullanıcı bilgisi uç noktasını çağırmak için.

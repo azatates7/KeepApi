@@ -5,7 +5,8 @@ Notlar Oracle'da (EF Core) saklanır, kimlik doğrulama ASP.NET Core Identity + 
 + refresh token (ve Google/Microsoft/GitHub ile sosyal giriş) ile yapılır, ayarlar
 DB-backed bir `AppSettings` tablosundan (appsettings.json değil) okunur, Quartz.NET
 ile her gün o günün notlarını özetleyen bir LLM job'ı ve hatırlatma zamanı gelen
-notlar için e-posta gönderen ayrı bir job çalışır.
+notlar için e-posta gönderen ayrı bir job çalışır. Runtime'da tetiklenen tekil
+olaylar (ör. başarısız giriş bildirimi) için ise Hangfire (Redis storage) kullanılır.
 
 ## Klasör yapısı
 
@@ -22,7 +23,8 @@ keep-todo-app/
       Program.cs
     KeepApi.Data/                EF Core DbContext, Entity'ler, Configuration'lar, Migrations, Seeder'lar
     KeepApi.Application/         Interface'ler ve Request/Response/DTO modelleri
-    KeepApi.Infrastructure/      JWT + refresh token, external OAuth, SMTP, LLM client'ları (Gemini/OpenAI/Ollama/Groq)
+    KeepApi.Infrastructure/      JWT + refresh token, external OAuth, SMTP, LLM client'ları (Gemini/OpenAI/Ollama/Groq),
+                                  Notifications/LoginFailureNotifier.cs (Hangfire fire-and-forget job)
     KeepApi.Common/              Ortak modeller (ApiResponse, BaseEntity), AppSettings şifreleme, ExtensionMethods (Truncate vb.)
     KeepApi.Tests/                xUnit/NUnit testleri
     Dockerfile
@@ -77,8 +79,24 @@ keep-todo-app/
   60dk) yanında opak bir refresh token da üretir; DB'de ham değil **SHA-256 hash'i**
   tutulur (`RefreshTokens` tablosu). `POST /api/auth/refresh` her çağrıldığında eski
   token iptal edilip yenisi döner (**rotation**). `Jwt:RefreshTokenExpireDays`
-  (varsayılan 14) DB'den ayarlanabilir. **Not:** bu altyapı şu an sadece backend'de
-  var — frontend (`api.js`/`Login.jsx`) henüz `refreshToken`'ı hiç saklamıyor/kullanmıyor.
+  (varsayılan 14) DB'den ayarlanabilir. Frontend tarafı da tamamlandı: `Login.jsx`/
+  `OAuthCallBack.jsx` `refreshToken`'ı da saklıyor; `api.js`'teki `apiFetch` 401
+  aldığında önce sessizce `/api/auth/refresh`'i deneyip orijinal isteği bir kez daha
+  gönderiyor (eşzamanlı birden fazla 401 tek bir refresh çağrısını paylaşıyor), yalnızca
+  refresh de başarısız olursa login ekranına düşülüyor; `handleLogout` de
+  `/api/auth/logout`'u çağırıp refresh token'ı sunucuda iptal ediyor (best-effort,
+  fire-and-forget).
+- **Hangfire (Redis storage) — başarısız giriş bildirimi.** `AuthService.LoginAsync`,
+  dört ayrı başarısızlık senaryosunu (kullanıcı yok, hesap kilitli, şifre yanlış,
+  e-posta doğrulanmamış) tek bir `catch (UnauthorizedAccessException)` bloğunda
+  yakalayıp `BackgroundJob.Enqueue<ILoginFailureNotifier>(...)` ile Hangfire kuyruğuna
+  atıyor — login isteği SMTP'nin süresini beklemiyor. Bildirim adresi
+  `Notifications:LoginFailureEmail` DB ayarından okunuyor. Hangfire'ın resmi/bakımlı
+  bir Oracle storage provider'ı olmadığı için storage olarak projede zaten çalışan
+  **Redis** kullanılıyor (aynı `Redis:ConnectionString` ayarı, Quartz'tan bağımsız).
+  Dashboard (`/hangfire`) sadece Development'ta açık — JWT bearer auth, tarayıcıdan
+  doğrudan açılan bir dashboard sayfasını koruyamadığı için production'da açmak
+  isterseniz IP allowlist veya ayrı bir Basic Auth filtresi eklemeniz gerekir.
 - **Attachment özetleme:** `/api/notes/attachments/summarize` ile yüklenen
   görsel/PDF/metin dosyası (maks. 8MB) LLM ile özetlenir; dosya sunucuda
   saklanmaz, sadece özet metni döner. Yüklenen dosyanın gerçek baytları,
@@ -174,15 +192,15 @@ dotnet test
 
 ## Bilinen eksikler / dikkat edilmesi gerekenler
 
-- **Refresh token frontend'de kullanılmıyor.** Backend altyapısı tam (bkz. yukarı)
-  ama `Login.jsx` sadece `result.token`'ı saklıyor, `result.refreshToken`'a hiç
-  dokunmuyor; `api.js`'de `/api/auth/refresh` çağıran bir kod yok. Yani JWT süresi
-  (60dk) dolunca kullanıcı hâlâ login ekranına düşüyor — refresh token DB'de
-  kullanılmadan 14 gün sonra süresi doluyor.
+- **Hangfire dashboard sadece Development'ta açık.** `/hangfire` production'da
+  (`app.Environment.IsDevelopment()` false iken) hiç expose edilmiyor — JWT bearer
+  auth, tarayıcıdan doğrudan açılan bir dashboard sayfasını koruyamadığı için. Prod'da
+  görmek isterseniz IP allowlist veya ayrı bir `IDashboardAuthorizationFilter`
+  (Basic Auth vb.) eklemek gerekir.
 - **`node_modules` git'e commit'lenmiş** (`frontend/node_modules`, ~2300 dosya).
   `.gitignore` bunu kapsamıyor; repo boyutunu şişiriyor ve `npm install`'u
   anlamsız kılıyor. `frontend/.gitignore` içine `node_modules/` eklenip
-  `git rm -r --cached frontend/node_modules` ile temizlenmesi önerilir.
+  `git rm -r --cached frontend/node_modules` ile temizlenmesi gerekir.
 - **Quartz cron zaman dilimi:** `Program.cs` içinde `TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time")`
   kullanılıyor; bu ID Windows ICU zaman dilimi adıdır. Linux container'da (ki
   Dockerfile `mcr.microsoft.com/dotnet/aspnet:10.0` — Linux tabanlı) bu ID'nin

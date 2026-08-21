@@ -2,6 +2,7 @@ const NOTES_BASE_URL = 'http://localhost:5080/api/notes'
 const AUTH_BASE_URL = 'http://localhost:5080/api/auth'
 
 const TOKEN_KEY = 'keep_todo_token'
+const REFRESH_TOKEN_KEY = 'keep_todo_refresh_token'
 
 export function getToken() {
     return localStorage.getItem(TOKEN_KEY)
@@ -11,8 +12,19 @@ export function setToken(token) {
     localStorage.setItem(TOKEN_KEY, token)
 }
 
+export function getRefreshToken() {
+    return localStorage.getItem(REFRESH_TOKEN_KEY)
+}
+
+export function setRefreshToken(refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+}
+
 export function clearToken() {
+    // JWT ve refresh token her zaman birlikte kullanılıp birlikte geçersiz kılındığı
+    // için tek fonksiyonda temizleniyor — her çağıran yer ikisini de temizlemek istiyor.
     localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
 function authHeaders() {
@@ -29,6 +41,44 @@ class UnauthorizedError extends Error {
     }
 }
 
+// Aynı anda birden fazla istek 401 alırsa (ör. sayfa açılışında birkaç paralel
+// çağrı) hepsi TEK bir /api/auth/refresh çağrısını paylaşsın diye modül seviyesinde
+// tutuluyor. apiFetch değil ham fetch kullanıyor — apiFetch'in kendisi 401'de bunu
+// çağırdığı için apiFetch üzerinden gitmek sonsuz döngüye yol açardı.
+let refreshPromise = null
+
+async function refreshAccessToken() {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) {
+        return null
+    }
+
+    try {
+        const res = await fetch(`${AUTH_BASE_URL}/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+        })
+
+        if (!res.ok) {
+            return null
+        }
+
+        const body = await res.json().catch(() => null)
+        const data = body?.data
+
+        if (!data?.token || !data?.refreshToken) {
+            return null
+        }
+
+        setToken(data.token)
+        setRefreshToken(data.refreshToken)
+        return data.token
+    } catch {
+        return null
+    }
+}
+
 async function apiFetch(url, options = {}) {
     const res = await fetch(url, {
         ...options,
@@ -38,12 +88,40 @@ async function apiFetch(url, options = {}) {
         },
     })
 
-    if (res.status === 401) {
+    if (res.status !== 401) {
+        return res
+    }
+
+    if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+            refreshPromise = null
+        })
+    }
+
+    const newToken = await refreshPromise
+
+    if (!newToken) {
         clearToken()
         throw new UnauthorizedError()
     }
 
-    return res
+    // Yeni token'la orijinal isteği bir kez daha dene.
+    const retryRes = await fetch(url, {
+        ...options,
+        headers: {
+            ...authHeaders(),
+            ...(options.headers || {}),
+        },
+    })
+
+    if (retryRes.status === 401) {
+        // Refresh başarılı oldu ama istek yine 401 döndürdü — döngüye girmeden
+        // oturumu kapat.
+        clearToken()
+        throw new UnauthorizedError()
+    }
+
+    return retryRes
 }
 
 // ---- auth ----
@@ -149,8 +227,8 @@ const DAILY_SUMMARY_BASE_URL = 'http://localhost:5080/api/dailysummary'
 export async function runDailySummary(signal) {
     const res = await apiFetch(
         `${DAILY_SUMMARY_BASE_URL}/me/run`, {
-            method: 'POST',
-            signal
+        method: 'POST',
+        signal
     })
 
     if (!res.ok) {

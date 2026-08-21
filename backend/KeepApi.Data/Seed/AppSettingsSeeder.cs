@@ -58,6 +58,7 @@ namespace KeepApi.Data.Seed
                 Plain("Smtp:User", "***************@gmail.com", "SMTP user", "KeepApi"),
                 Secret("Smtp:Password", "***************", "Gmail app password", "KeepApi", crypto),
                 Plain("Smtp:From", "***************@gmail.com", "SMTP from", "KeepApi"),
+                Plain("Notifications:LoginFailureEmail", "***************@@gmail.com", "Başarısız giriş bildirim adresi", "KeepApi"),
                 Plain("Smtp:EnableSsl", "true", "SMTP enable SSL", "KeepApi")
             };
 
