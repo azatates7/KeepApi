@@ -61,9 +61,15 @@ namespace KeepApi.Services
                             !n.IsDeleted,
                         ct);
 
+                var existingSummaryLangMatches = existingSummaryNote is not null &&
+                (lang == "en"
+                    ? existingSummaryNote.Title?.StartsWith("Daily Summary", StringComparison.Ordinal) == true
+                    : existingSummaryNote.Title?.StartsWith("Günlük Özet", StringComparison.Ordinal) == true);
+
                 // Yeni not yok ve daha önce oluşturulmuş, bir özet varsa herhangi bir işlem yapma.
                 if (recentNotes.Count == 0 &&
-                    existingSummaryNote is not null)
+                    existingSummaryNote is not null &&
+                    existingSummaryLangMatches)
                 {
                     _logger.LogInformation(
                         "Kullanıcı {UserId} için yeni not yok, mevcut özet korunuyor.",
