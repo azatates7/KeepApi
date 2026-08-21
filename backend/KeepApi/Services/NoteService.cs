@@ -108,7 +108,7 @@ public class NoteService
                 !request.Checklist &&
                 string.IsNullOrWhiteSpace(request?.Content))
             {
-                throw new Exception("Not title veya içerik boş olamaz.");
+                throw new InvalidOperationException("Not title veya içerik boş olamaz.");
             }
 
             var currentUserId = GetCurrentUserId();
@@ -138,6 +138,10 @@ public class NoteService
 
             return note;
         }
+        catch (InvalidOperationException)
+        {
+            throw; // beklenen bir validasyon hatası — LogError ile gürültü yapmadan controller'a bırak
+        }        
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while creating note.");
@@ -151,7 +155,7 @@ public class NoteService
         {
             if (!request.ImageAdded && string.IsNullOrWhiteSpace(request?.Content))
             {
-                throw new Exception("Not title veya içerik boş olamaz.");
+                throw new InvalidOperationException("Not title veya içerik boş olamaz.");
             }
 
             var currentUserId = GetCurrentUserId();
@@ -196,6 +200,10 @@ public class NoteService
             _logger.LogInformation($"User {currentUserId} updated note {id}");
 
             return existing;
+        }
+        catch (InvalidOperationException)
+        {
+            throw; // beklenen bir validasyon hatası — LogError ile dönüşü controller'a bırak
         }
         catch (Exception ex)
         {
