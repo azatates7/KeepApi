@@ -146,10 +146,11 @@ const DAILY_SUMMARY_BASE_URL = 'http://localhost:5080/api/dailysummary'
 
 // Kullanıcının günlük özet notunu senkron olarak (yanıtı bekleyerek) oluşturur/günceller.
 // Not: LLM çağrısı içerdiği için birkaç saniye sürebilir; çağıran taraf butonu bu süre boyunca disable etmeli.
-export async function runDailySummary() {
+export async function runDailySummary(signal) {
     const res = await apiFetch(
         `${DAILY_SUMMARY_BASE_URL}/me/run`, {
-        method: 'POST'
+            method: 'POST',
+            signal
     })
 
     if (!res.ok) {

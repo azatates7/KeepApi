@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Composer from './components/Composer.jsx'
 import NoteCard from './components/NoteCard.jsx'
@@ -12,7 +12,7 @@ import {
     updateNote,
     getToken,
     clearToken,
-    runDailySummary
+    runDailySummary,
 } from './api.js'
 import { useReminders } from './components/useReminders.jsx'
 import Trash from './components/Trash.jsx'
@@ -21,7 +21,7 @@ import Register from './components/Register.jsx'
 import OAuthCallBack from './components/OAuthCallBack.jsx'
 
 export default function App() {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getToken()))
     // 'login' | 'register'
     const [authView, setAuthView] = useState('login')
@@ -32,9 +32,9 @@ export default function App() {
     const [error, setError] = useState(null)
     const [showArchived, setShowArchived] = useState(false)
     const [showTrash, setShowTrash] = useState(false)
-
     const [summaryRunning, setSummaryRunning] = useState(false)
     const [summaryError, setSummaryError] = useState(null)
+    const summaryAbortRef = useRef(null)
 
     const [searchOpen, setSearchOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -95,6 +95,7 @@ export default function App() {
     }
 
     function handleLogout() {
+        cancelDailySummary()
         clearToken()
         setNotes([])
         setSearchNotes([])
@@ -214,6 +215,7 @@ export default function App() {
     }
 
     function toggleArchiveView() {
+        cancelDailySummary()
         setShowTrash(false)
         setSearchOpen(false)
         setShowArchived((current) => !current)
@@ -222,14 +224,22 @@ export default function App() {
     async function handleRunDailySummary() {
         if (summaryRunning) return
 
+        const controller = new AbortController()
+        summaryAbortRef.current = controller
+
         setSummaryRunning(true)
         setSummaryError(null)
 
         try {
-            await runDailySummary()
+            await runDailySummary(controller.signal)
             // Özet notu yeni oluşmuş/güncellenmiş olabilir; listeyi tazele.
             await load()
         } catch (err) {
+            if (err.name === 'AbortError') {
+                // Kullanıcı başka bir görünüme geçti / sayfadan ayrıldı — sessizce geç.
+                return
+            }
+
             if (err.message === 'UNAUTHORIZED') {
                 setIsAuthenticated(false)
                 return
@@ -237,9 +247,33 @@ export default function App() {
 
             setSummaryError(err.message)
         } finally {
+            // Bu arada yeni bir çalıştırma başlatılmadıysa (ref hâlâ bizim controller'ımızsa) temizle.
+            if (summaryAbortRef.current === controller) {
+                summaryAbortRef.current = null
+            }
             setSummaryRunning(false)
         }
     }
+
+    // Arşiv/Aktif Notlar/Çöp Kutusu'na geçiş, dil değişimi, çıkış veya sayfa yenilemesi/kapatma —
+    // hepsinde sürmekte olan bir özet oluşturma isteği varsa iptal edilir.
+    function cancelDailySummary() {
+        if (summaryAbortRef.current) {
+            summaryAbortRef.current.abort()
+            summaryAbortRef.current = null
+        }
+        setSummaryRunning(false)
+    }
+
+    useEffect(() => {
+        i18n.on('languageChanged', cancelDailySummary)
+        return () => i18n.off('languageChanged', cancelDailySummary)
+    }, [i18n])
+
+    useEffect(() => {
+        window.addEventListener('beforeunload', cancelDailySummary)
+        return () => window.removeEventListener('beforeunload', cancelDailySummary)
+    }, [])
 
     const visible = useMemo(
         () => notes.filter((n) => (showArchived ? n.archived : !n.archived)),
@@ -334,13 +368,12 @@ export default function App() {
                 </div>
 
                 <div className="header-actions">
-
                     <button
                         className="header-action"
-                            onClick={handleRunDailySummary}
-                            disabled={summaryRunning}
-                            title={t('app.dailySummaryTitle')}
-                        >
+                        onClick={handleRunDailySummary}
+                        disabled={summaryRunning}
+                        title={t('app.dailySummaryTitle')}
+                    >
                         {summaryRunning ? t('app.dailySummaryRunning') : t('app.dailySummaryButton')}
                     </button>
 
@@ -356,12 +389,13 @@ export default function App() {
                         <button
                             className="header-action"
                             onClick={() => {
+                                cancelDailySummary()
                                 setSearchOpen(false)
                                 setShowTrash(true)
                             }}
                             title={t('app.openTrash')}
                         >
-                                {t('app.trash')}
+                            {t('app.trash')}
                         </button>
                     )}
 
@@ -384,6 +418,7 @@ export default function App() {
 
                     {loading && <p className="status">{t('app.loading')}</p>}
                     {error && <p className="status error">{t('app.connectionError', { message: error })}</p>}
+                    {summaryError && <p className="status error">{summaryError}</p>}
 
                     {!loading && visible.length === 0 && (
                         <p className="empty-state">
