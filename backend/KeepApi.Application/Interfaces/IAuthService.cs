@@ -9,7 +9,7 @@ namespace KeepApi.Application.Interfaces
         Task<LoginResponse> LoginAsync(LoginRequest request);
 
         /// <summary>Google/Microsoft/GitHub authorization code'unu doğrulayıp eşleşen (veya yeni oluşturulan) kullanıcı için JWT döner.</summary>
-        
+
         Task<LoginResponse> ExternalLoginAsync(string provider, ExternalLoginRequest request);
 
         Task RegisterAsync(RegisterRequest request);
@@ -21,6 +21,14 @@ namespace KeepApi.Application.Interfaces
 
         /// <summary>Kullanıcının arayüz/özet dilini günceller ("tr" | "en").</summary>
         Task UpdateLanguageAsync(Guid userId, string language);
+
+        /// <summary>Geçerli bir refresh token karşılığında yeni bir JWT + yeni bir refresh token döner
+        /// (rotation — eski refresh token bu çağrıyla iptal edilir). Token geçersiz/süresi dolmuşsa
+        /// UnauthorizedAccessException fırlatır.</summary>
+        Task<LoginResponse> RefreshTokenAsync(string refreshToken);
+
+        /// <summary>Verilen refresh token'ı iptal eder (logout).</summary>
+        Task RevokeRefreshTokenAsync(string refreshToken);
 
         Task ForgotPasswordAsync(ForgotPasswordRequest request);
 

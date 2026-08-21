@@ -36,6 +36,9 @@ namespace KeepApi.Data.Entity
 
         public DateTime? ReminderAt { get; set; }
 
+        /// <summary>Hatırlatma e-postası gönderildiği an (null ise henüz gönderilmedi). ReminderNotificationJob tarafından yazılır.</summary>
+        public DateTime? ReminderNotifiedAt { get; set; }
+
         public Guid UserId { get; set; }
 
         public ApplicationUser User { get; set; } = null!;

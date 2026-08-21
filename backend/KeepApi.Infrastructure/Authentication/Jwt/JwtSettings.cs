@@ -23,5 +23,7 @@ namespace KeepApi.Infrastructure.Authentication.Jwt
         public bool ValidateLifetime { get; init; } = true;
 
         public bool ValidateIssuerSigningKey { get; init; } = true;
+        /// <summary>Refresh token'ın geçerlilik süresi (gün). DB'de ayarlı değilse 14 gün varsayılır.</summary>
+        public int RefreshTokenExpireDays { get; init; } = 14;
     }
 }

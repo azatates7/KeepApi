@@ -6,6 +6,7 @@ using KeepApi.Data.Entity;
 using KeepApi.Infrastructure.Authentication.External;
 using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
+using KeepApi.Infrastructure.Authentication.RefreshTokens;
 using KeepApi.Infrastructure.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -31,6 +32,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
         private readonly IPasswordResetCodeStore _resetCodeStore;
         private readonly IEmailService _emailService;
         private readonly IExternalOAuthClient _externalOAuthClient;
+        private readonly IRefreshTokenService _refreshTokenService;
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
@@ -40,6 +42,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
             IPasswordResetCodeStore resetCodeStore,
             IEmailService emailService,
             IExternalOAuthClient externalOAuthClient,
+            IRefreshTokenService refreshTokenService,
             ILogger<AuthService> logger)
         {
             _userManager = userManager;
@@ -48,6 +51,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
             _resetCodeStore = resetCodeStore;
             _emailService = emailService;
             _externalOAuthClient = externalOAuthClient;
+            _refreshTokenService = refreshTokenService;
             _logger = logger;
         }
 
@@ -91,6 +95,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             var roles = await _userManager.GetRolesAsync(user);
             var token = await _jwtService.GenerateTokenAsync(user);
+            var (refreshToken, refreshExpiresAt) = await _refreshTokenService.IssueAsync(user.Id);
 
             return new LoginResponse
             {
@@ -100,7 +105,9 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 FullName = $"{user.FirstName} {user.LastName}".Trim(),
                 Roles = roles,
                 Token = token,
-                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes)
+                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes),
+                RefreshToken = refreshToken,
+                RefreshTokenExpiresAt = refreshExpiresAt
             };
         }
 
@@ -215,6 +222,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             var roles = await _userManager.GetRolesAsync(user);
             var token = await _jwtService.GenerateTokenAsync(user);
+            var (refreshToken, refreshExpiresAt) = await _refreshTokenService.IssueAsync(user.Id);
 
             return new LoginResponse
             {
@@ -224,7 +232,9 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 FullName = $"{user.FirstName} {user.LastName}".Trim(),
                 Roles = roles,
                 Token = token,
-                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes)
+                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes),
+                RefreshToken = refreshToken,
+                RefreshTokenExpiresAt = refreshExpiresAt
             };
         }
 
@@ -375,6 +385,55 @@ namespace KeepApi.Infrastructure.Authentication.Services
 
             user.PreferredLanguage = language;
             await _userManager.UpdateAsync(user);
+        }
+
+        public async Task<LoginResponse> RefreshTokenAsync(string refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                throw new UnauthorizedAccessException("Refresh token gerekli.");
+            }
+
+            var rotated = await _refreshTokenService.ValidateAndRotateAsync(refreshToken);
+            if (rotated is null)
+            {
+                throw new UnauthorizedAccessException("Refresh token geçersiz veya süresi dolmuş.");
+            }
+
+            var user = await _userManager.FindByIdAsync(rotated.Value.UserId.ToString());
+            if (user is null || user.IsDeleted)
+            {
+                throw new UnauthorizedAccessException("Kullanıcı bulunamadı.");
+            }
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                throw new UnauthorizedAccessException("Hesap kilitli. Lütfen daha sonra tekrar deneyin.");
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = await _jwtService.GenerateTokenAsync(user);
+
+            return new LoginResponse
+            {
+                UserId = user.Id,
+                UserName = user.UserName ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                FullName = $"{user.FirstName} {user.LastName}".Trim(),
+                Roles = roles,
+                Token = token,
+                ExpiresAt = DateTime.Now.AddMinutes(_jwtSettings.ExpireMinutes),
+                RefreshToken = rotated.Value.Token,
+                RefreshTokenExpiresAt = rotated.Value.ExpiresAt
+            };
+        }
+
+        public async Task RevokeRefreshTokenAsync(string refreshToken)
+        {
+            if (!string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await _refreshTokenService.RevokeAsync(refreshToken);
+            }
         }
 
         public async Task ForgotPasswordAsync(ForgotPasswordRequest request)

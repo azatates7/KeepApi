@@ -43,7 +43,7 @@ namespace KeepApi.Services
                     ? "en"
                     : "tr";
 
-                var since = DateTime.UtcNow.AddHours(-24);
+                var since = DateTime.Now.AddHours(-24);
 
                 var recentNotes = await _context.Notes
                     .Where(n => n.UserId == userId)
@@ -120,8 +120,8 @@ namespace KeepApi.Services
                 }
 
                 existingSummaryNote.Title = lang == "en"
-                    ? $"Daily Summary - {DateTime.UtcNow:dd.MM.yyyy}"
-                    : $"Günlük Özet - {DateTime.UtcNow:dd.MM.yyyy}";
+                    ? $"Daily Summary - {DateTime.Now:dd.MM.yyyy}"
+                    : $"Günlük Özet - {DateTime.Now:dd.MM.yyyy}";
 
                 existingSummaryNote.Content = summaryText;
 

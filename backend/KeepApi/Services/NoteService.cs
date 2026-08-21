@@ -31,7 +31,6 @@ public class NoteService
     private readonly ICurrentUserService _currentUser;
 
     public NoteService(
-        IWebHostEnvironment env,
         ILogger<NoteService> logger,
         IConnectionMultiplexer redis,
         KeepDbContext context,

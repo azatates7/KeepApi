@@ -23,7 +23,10 @@
     "titleEmptyAlert": "Title cannot be empty.",
     "untitledNote": "New Note",
     "untitledList": "New List",
-    "untitledImage": "New Image"
+    "untitledImage": "New Image",
+    "dailySummaryButton": "Daily Summary",
+    "dailySummaryTitle": "Create/update the daily summary note now",
+    "dailySummaryRunning": "Summarizing…"
   },
   "language": {
     "toggleAriaLabel": "Change language",

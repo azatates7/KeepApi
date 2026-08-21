@@ -46,6 +46,9 @@ namespace KeepApi.Data.Configurations
             builder.Property(x => x.ReminderAt)
                 .HasColumnName("REMINDER_AT");
 
+            builder.Property(x => x.ReminderNotifiedAt)
+                .HasColumnName("REMINDER_NOTIFIED_AT");
+
             builder.Property(x => x.PinnedAt)
                 .HasColumnName("PINNED_AT");
 

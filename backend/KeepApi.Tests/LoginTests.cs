@@ -1,12 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using KeepApi.Application.Interfaces;
 using KeepApi.Application.Models.Request.Auth;
 using KeepApi.Application.Models.Response.Auth;
 using KeepApi.Common.Models;
 using KeepApi.Controllers;
 using Microsoft.AspNetCore.Mvc;
-using Xunit;
 
 namespace KeepApi.Tests
 {
@@ -42,6 +39,16 @@ namespace KeepApi.Tests
             public Task ForgotPasswordAsync(Application.Models.Request.Auth.ForgotPasswordRequest request) => throw new NotImplementedException();
             public Task ResetPasswordAsync(Application.Models.Request.Auth.ResetPasswordRequest request) => throw new NotImplementedException();
             public Task VerifyEmailAsync(Application.Models.Request.Auth.VerifyEmailRequest request) => throw new NotImplementedException();
+
+            public Task<LoginResponse> RefreshTokenAsync(string refreshToken)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task RevokeRefreshTokenAsync(string refreshToken)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         [Fact]

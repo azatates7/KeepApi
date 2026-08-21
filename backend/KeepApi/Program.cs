@@ -230,7 +230,17 @@ builder.Services.AddQuartz(q =>
         .WithIdentity("DailySummaryJob-trigger")
         .WithCronSchedule("0 57 16 * * ?", x => x.InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"))));
     // Linux container'da "Turkey Standard Time" bulunamazsa "Europe/Istanbul" kullanılmalı
+
+    var reminderJobKey = new JobKey("ReminderNotificationJob");
+    q.AddJob<ReminderNotificationJob>(opts => opts.WithIdentity(reminderJobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(reminderJobKey)
+        .WithIdentity("ReminderNotificationJob-trigger")
+        .WithSimpleSchedule(x => x
+            .WithIntervalInMinutes(5)
+            .RepeatForever()));
 });
+
 builder.Services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);
 
 var app = builder.Build();

@@ -12,6 +12,7 @@ import {
     updateNote,
     getToken,
     clearToken,
+    runDailySummary
 } from './api.js'
 import { useReminders } from './components/useReminders.jsx'
 import Trash from './components/Trash.jsx'
@@ -31,6 +32,9 @@ export default function App() {
     const [error, setError] = useState(null)
     const [showArchived, setShowArchived] = useState(false)
     const [showTrash, setShowTrash] = useState(false)
+
+    const [summaryRunning, setSummaryRunning] = useState(false)
+    const [summaryError, setSummaryError] = useState(null)
 
     const [searchOpen, setSearchOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -215,6 +219,28 @@ export default function App() {
         setShowArchived((current) => !current)
     }
 
+    async function handleRunDailySummary() {
+        if (summaryRunning) return
+
+        setSummaryRunning(true)
+        setSummaryError(null)
+
+        try {
+            await runDailySummary()
+            // Özet notu yeni oluşmuş/güncellenmiş olabilir; listeyi tazele.
+            await load()
+        } catch (err) {
+            if (err.message === 'UNAUTHORIZED') {
+                setIsAuthenticated(false)
+                return
+            }
+
+            setSummaryError(err.message)
+        } finally {
+            setSummaryRunning(false)
+        }
+    }
+
     const visible = useMemo(
         () => notes.filter((n) => (showArchived ? n.archived : !n.archived)),
         [notes, showArchived]
@@ -308,6 +334,16 @@ export default function App() {
                 </div>
 
                 <div className="header-actions">
+
+                    <button
+                        className="header-action"
+                            onClick={handleRunDailySummary}
+                            disabled={summaryRunning}
+                            title={t('app.dailySummaryTitle')}
+                        >
+                        {summaryRunning ? t('app.dailySummaryRunning') : t('app.dailySummaryButton')}
+                    </button>
+
                     <button
                         className="header-action"
                         onClick={toggleArchiveView}
@@ -316,16 +352,18 @@ export default function App() {
                         {showArchived ? t('app.activeNotes') : t('app.archive')}
                     </button>
 
-                    <button
-                        className="header-action"
-                        onClick={() => {
-                            setSearchOpen(false)
-                            setShowTrash(true)
-                        }}
-                        title={t('app.openTrash')}
-                    >
-                        {t('app.trash')}
-                    </button>
+                    {!showTrash && (
+                        <button
+                            className="header-action"
+                            onClick={() => {
+                                setSearchOpen(false)
+                                setShowTrash(true)
+                            }}
+                            title={t('app.openTrash')}
+                        >
+                                {t('app.trash')}
+                        </button>
+                    )}
 
                     <UserMenu username={prefillUsername} onLogout={handleLogout} />
                 </div>

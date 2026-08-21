@@ -23,7 +23,10 @@
     "titleEmptyAlert": "Başlık boş bırakılamaz.",
     "untitledNote": "Yeni Not",
     "untitledList": "Yeni Liste",
-    "untitledImage": "Yeni Görsel"
+    "untitledImage": "Yeni Görsel",
+    "dailySummaryButton": "Günlük Özet",
+    "dailySummaryTitle": "Günlük özet notunu şimdi oluştur/güncelle",
+    "dailySummaryRunning": "Özetleniyor…"
   },
   "language": {
     "toggleAriaLabel": "Dili değiştir",

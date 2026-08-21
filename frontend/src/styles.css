@@ -756,6 +756,7 @@ button {
 
 .checklist-text-input {
     flex: 1;
+    min-width: 0;
     font-size: 14px;
     line-height: 1.5;
     color: var(--ink);
@@ -823,6 +824,7 @@ button {
 
 .checklist-add-input {
     flex: 1;
+    min-width: 0;
     border: none;
     background: none;
     outline: none;

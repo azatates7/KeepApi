@@ -145,6 +145,41 @@ namespace KeepApi.Controllers
             }
         }
 
+        /// <summary>Süresi dolmuş/dolmak üzere olan bir JWT'yi geçerli bir refresh token karşılığında yeniler.
+        /// Refresh token tek kullanımlıktır (rotation): her başarılı çağrıda eski token iptal edilir,
+        /// yanıtta yeni bir refresh token döner — istemci bunu bir sonraki yenilemede kullanmalı.</summary>
+        /// <response code="200">Yeni JWT + yeni refresh token döner.</response>
+        /// <response code="401">Refresh token geçersiz, iptal edilmiş veya süresi dolmuş.</response>
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+                return Ok(ApiResponse<LoginResponse>.Ok(result, "Token yenilendi."));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ApiResponse<LoginResponse>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>Verilen refresh token'ı iptal eder. Access token (JWT) süresi dolana kadar
+        /// geçerliliğini korur — sunucu tarafında JWT'yi iptal etmenin bir yolu yok, bu nedenle
+        /// gerçek "anında çıkış" isteniyorsa JWT ömrünü kısa tutmak gerekir.</summary>
+        /// <response code="200">Refresh token iptal edildi.</response>
+        [HttpPost("logout")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<ApiResponse<object>>> Logout([FromBody] RefreshTokenRequest request)
+        {
+            await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+            return Ok(ApiResponse<object>.Ok(new { }, "Çıkış yapıldı."));
+        }
+
         /// <summary>Token sahibi kullanıcının bilgilerini döner. Bearer token gerektirir.</summary>
         /// <response code="200">Kullanıcı bilgisi döner.</response>
         /// <response code="401">Geçersiz veya eksik token.</response>
@@ -165,15 +200,25 @@ namespace KeepApi.Controllers
             return Ok(ApiResponse<UserDto>.Ok(user));
         }
 
+        /// <summary>Token sahibi kullanıcının arayüz/özet dilini günceller ("tr" | "en").
+        /// Günlük Özet job'ı bu değeri okuyup özeti kullanıcının tercih ettiği dilde üretir.</summary>
+        /// <response code="200">Dil güncellendi.</response>
+        /// <response code="400">Desteklenmeyen dil değeri.</response>
+        /// <response code="401">Geçersiz veya eksik token.</response>
         [HttpPut("me/language")]
         [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<ApiResponse<object>>> UpdateLanguage([FromBody] UpdateLanguageRequest request)
         {
             var userId = GetCurrentUserId();
+
             if (userId is null)
             {
                 return Unauthorized(ApiResponse<object>.Fail("Token içinde kullanıcı bilgisi bulunamadı."));
             }
+
             try
             {
                 await _authService.UpdateLanguageAsync(userId.Value, request.Language);

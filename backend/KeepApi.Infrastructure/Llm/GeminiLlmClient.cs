@@ -19,12 +19,11 @@ namespace KeepApi.Infrastructure.Llm
         {
             var apiKey = _configuration["Llm:ApiKey"] ?? throw new InvalidOperationException("Llm:ApiKey yok.");
 
-            var model = //_configuration["Llm:Model"] ??
+            var model = _configuration["Llm:Model"] ??
                         "gemini-3.6-flash";
 
             var baseUrl = //_configuration["Llm:BaseUrl"] ??
                           "https://generativelanguage.googleapis.com/v1beta";
-
             var url = $"{baseUrl}/models/{model}:generateContent?key={apiKey}";
 
             var response = await _httpClient.PostAsJsonAsync(url, new
@@ -35,10 +34,12 @@ namespace KeepApi.Infrastructure.Llm
                 }
             }, ct);
 
+            var responseBody = await response.Content.ReadAsStringAsync(ct);
+
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
-            return json.GetProperty("candidates")[0]
+            var jsonContent = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: ct);
+            return jsonContent.GetProperty("candidates")[0]
                         .GetProperty("content")
                         .GetProperty("parts")[0]
                         .GetProperty("text")

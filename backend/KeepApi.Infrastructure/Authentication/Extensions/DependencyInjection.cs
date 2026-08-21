@@ -3,6 +3,7 @@ using KeepApi.Application.Interfaces;
 using KeepApi.Infrastructure.Authentication.External;
 using KeepApi.Infrastructure.Authentication.Jwt;
 using KeepApi.Infrastructure.Authentication.PasswordReset;
+using KeepApi.Infrastructure.Authentication.RefreshTokens;
 using KeepApi.Infrastructure.Authentication.Services;
 using KeepApi.Infrastructure.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,6 +37,7 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IEmailService, SmtpEmailService>();
+            services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
             // Google/Microsoft/GitHub authorization code'unu değiştirip
             // sağlayıcının kullanıcı bilgisi uç noktasını çağırmak için.

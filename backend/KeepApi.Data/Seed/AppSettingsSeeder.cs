@@ -18,7 +18,7 @@ namespace KeepApi.Data.Seed
                 Plain("Llm:Provider", "gemini", "LLM provider", "KeepApi"),
                 Plain("Llm:Model", "gemini-3.6-flash", "LLM model", "KeepApi"),
                 Plain("Llm:BaseUrl", "https://generativelanguage.googleapis.com/v1beta", "LLM base url", "KeepApi"),
-                Secret("Llm:ApiKey", "AQ.***************", "LLM API key", "KeepApi", crypto),
+                Secret("Llm:ApiKey", "AQ.-***************", "LLM API key", "KeepApi", crypto),
 
                 Plain("Llm:OpenAI:Model", "gpt-4o-mini", "OpenAI (ChatGPT) model", "KeepApi"),
                 Plain("Llm:OpenAI:BaseUrl", "https://api.openai.com/v1", "OpenAI base url", "KeepApi"),
@@ -37,6 +37,9 @@ namespace KeepApi.Data.Seed
                 Plain("Jwt:Issuer", "KeepApi", "JWT issuer", "KeepApi"),
                 Plain("Jwt:Audience", "KeepReact", "JWT audience", "KeepApi"),
                 Plain("Jwt:ExpireMinutes", "60", "JWT token süresi (dk)", "KeepApi"),
+
+                Plain("Jwt:RefreshTokenExpireDays", "14", "Refresh token geçerlilik süresi (gün)", "KeepApi"),
+
                 Plain("Jwt:ValidateIssuer", "true", "JWT issuer doğrulama", "KeepApi"),
                 Plain("Jwt:ValidateAudience", "true", "JWT audience doğrulama", "KeepApi"),
                 Plain("Jwt:ValidateLifetime", "true", "JWT token geçerliliği", "KeepApi"),

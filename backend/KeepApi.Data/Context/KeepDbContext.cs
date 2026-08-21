@@ -22,6 +22,8 @@ namespace KeepApi.Data.Context
 
         public DbSet<JobDefinition> JobDefinitions { get; set; }
         public DbSet<JobHistory> JobHistories { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfigurationsFromAssembly(typeof(KeepDbContext).Assembly);
