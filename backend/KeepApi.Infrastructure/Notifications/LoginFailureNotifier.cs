@@ -40,7 +40,7 @@ namespace KeepApi.Infrastructure.Notifications
 
             await _emailService.SendAsync(
                 notifyAddress,
-                "KeepApi — Başarısız giriş denemesi",
+                "KeepApi — Başarısız Giriş Denemesi",
                 $"Kullanıcı adı/e-posta: {userNameOrEmail}\n" +
                 $"Sebep: {reason}\n" +
                 $"Zaman: {occurredAt:dd.MM.yyyy HH:mm:ss}",
