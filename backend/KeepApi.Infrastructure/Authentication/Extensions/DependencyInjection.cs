@@ -48,7 +48,7 @@ namespace KeepApi.Infrastructure.Authentication.Extensions
             // Şifre sıfırlama kodları kısa ömürlü (10 dk) olduğu için tek instance'lık
             // bellek içi depo yeterli; birden fazla API instance'ı (load balancer arkasında)
             // çalıştırırsanız bunun yerine Redis tabanlı bir implementasyon gerekir.
-            services.AddSingleton<IPasswordResetCodeStore, InMemoryPasswordResetCodeStore>();
+            services.AddSingleton<IPasswordResetCodeStore, RedisPasswordResetCodeStore>();
 
             var jwtSettings =
                 configuration

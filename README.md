@@ -97,6 +97,9 @@ keep-todo-app/
   Dashboard (`/hangfire`) sadece Development'ta açık — JWT bearer auth, tarayıcıdan
   doğrudan açılan bir dashboard sayfasını koruyamadığı için production'da açmak
   isterseniz IP allowlist veya ayrı bir Basic Auth filtresi eklemeniz gerekir.
+- **Şifre sıfırlama/e-posta doğrulama kodları Redis'te tutulur** (`RedisPasswordResetCodeStore`,
+  TTL ile) — backend restart olsa bile bekleyen kodlar kaybolmaz, süresi dolan kod
+  Redis tarafından otomatik silinir.
 - **Attachment özetleme:** `/api/notes/attachments/summarize` ile yüklenen
   görsel/PDF/metin dosyası (maks. 8MB) LLM ile özetlenir; dosya sunucuda
   saklanmaz, sadece özet metni döner. Yüklenen dosyanın gerçek baytları,
@@ -190,13 +193,13 @@ dotnet test
 | GET    | /api/dailysummary/me/history      | JWT         | Kendi özet geçmişi |
 | POST   | /api/dailysummary/run-all         | JWT (Admin) | Job'ı tüm kullanıcılar için tetikler (async) |
 
-## Bilinen eksikler / dikkat edilmesi gerekenler
+## TODO Items / tamamlanması gerekenler
 
 - **Hangfire dashboard sadece Development'ta açık.** `/hangfire` production'da
   (`app.Environment.IsDevelopment()` false iken) hiç expose edilmiyor — JWT bearer
   auth, tarayıcıdan doğrudan açılan bir dashboard sayfasını koruyamadığı için. Prod'da
   görmek isterseniz IP allowlist veya ayrı bir `IDashboardAuthorizationFilter`
-  (Basic Auth vb.) eklemek gerekir.
+  (Basic Auth vb.) eklemeniz gerekir.
 - **`node_modules` git'e commit'lenmiş** (`frontend/node_modules`, ~2300 dosya).
   `.gitignore` bunu kapsamıyor; repo boyutunu şişiriyor ve `npm install`'u
   anlamsız kılıyor. `frontend/.gitignore` içine `node_modules/` eklenip
@@ -214,9 +217,6 @@ dotnet test
   çalışıyor, ama başka bir host/port'a taşındığında (örn. gerçek bir sunucuya
   deploy) elle değiştirmek gerekir; bir `VITE_API_BASE_URL` env değişkenine
   taşımak daha esnek olur.
-- **`InMemoryPasswordResetCodeStore`** — şifre sıfırlama/e-posta doğrulama kodları
-  sadece bellekte (`ConcurrentDictionary`) tutuluyor; stack'te zaten Redis var ama
-  bu kodlar için kullanılmıyor. Backend restart olursa bekleyen kodlar kaybolur.
 - **`JobDefinitions` seeder eksik** — `DailySummaryJob`'ın bağımlı olduğu
   `JobDefinitions` tablosuna satır ekleyen bir seeder kod tabanında yok;
   muhtemelen elle eklenmiş bir satıra güveniyor.

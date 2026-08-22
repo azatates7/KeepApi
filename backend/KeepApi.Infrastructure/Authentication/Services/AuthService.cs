@@ -323,7 +323,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 await _userManager.AddToRoleAsync(user, "User");
             }
 
-            var code = _resetCodeStore.GenerateCode(user.Id, ResetCodeTtl);
+            var code = await _resetCodeStore.GenerateCodeAsync(user.Id, ResetCodeTtl);
 
             await _emailService.SendAsync(
                 user.Email!,
@@ -463,7 +463,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 return;
             }
 
-            var code = _resetCodeStore.GenerateCode(user.Id, ResetCodeTtl);
+            var code = await _resetCodeStore.GenerateCodeAsync(user.Id, ResetCodeTtl);
 
             await _emailService.SendAsync(
                 user.Email!,
@@ -488,7 +488,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 throw new InvalidOperationException("Kod veya e-posta hatalı.");
             }
 
-            if (!_resetCodeStore.TryValidateAndConsume(user.Id, request.Code))
+            if (!await _resetCodeStore.TryValidateAndConsumeAsync(user.Id, request.Code))
             {
                 throw new InvalidOperationException("Kod hatalı veya süresi dolmuş.");
             }
@@ -530,7 +530,7 @@ namespace KeepApi.Infrastructure.Authentication.Services
                 return; // zaten doğrulanmış, sessizce başarı say
             }
 
-            if (!_resetCodeStore.TryValidateAndConsume(user.Id, request.Code))
+            if (!await _resetCodeStore.TryValidateAndConsumeAsync(user.Id, request.Code))
             {
                 throw new InvalidOperationException("Kod hatalı veya süresi dolmuş.");
             }
@@ -539,7 +539,6 @@ namespace KeepApi.Infrastructure.Authentication.Services
             var updateResult = await _userManager.UpdateAsync(user);
 
             if (!updateResult.Succeeded)
-            {
                 throw new InvalidOperationException(
                     string.Join(" ", updateResult.Errors.Select(e => e.Description)));
             }
